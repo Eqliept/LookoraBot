@@ -1,14 +1,83 @@
-import type { Bot } from "grammy";
+import { Bot, InputFile, InlineKeyboard } from "grammy";
 import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
 import { getTopUpKeyboard, getMainMenuKeyboard, getPaymentMethodKeyboard, getAdminTopUpKeyboard } from "../keyboards/index.ts";
 import { getPackageInfo } from "../services/wallet.service.ts";
 import { findUser } from "../services/user.service.ts";
 import { createCryptoBotInvoice, checkInvoiceStatus } from "../services/cryptobot.service.ts";
-import { InlineKeyboard } from "grammy";
-import { ADMIN_ID } from "../constants/index.ts";
+import { ADMIN_ID, WALLET_IMAGE, MAIN_IMAGE } from "../constants/index.ts";
 
 const awaitingCustomAmount = new Set<number>();
 const pendingPayments = new Map<number, { amount: number; total: number; invoiceId?: number }>();
+
+// Функция для красивого сообщения о пакете
+function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: number; total: number; price: number }) {
+    const user = findUser(ctx.from!.id);
+    const locale = user?.language?.toLowerCase() || "en";
+    
+    const messages: Record<string, string> = {
+        ru: `✨ ВАШ ПАКЕТ ✨
+
+📦 Базовое количество: ${pkg.amount} лук койнов
+🎁 Бонус: +${pkg.bonus}%
+
+💎 ИТОГО: ${pkg.total} лук койнов
+💳 Цена: $${pkg.price}
+
+✅ Выберите способ оплаты:`,
+        
+        en: `✨ YOUR PACKAGE ✨
+
+📦 Base amount: ${pkg.amount} look coins
+🎁 Bonus: +${pkg.bonus}%
+
+💎 TOTAL: ${pkg.total} look coins
+💳 Price: $${pkg.price}
+
+✅ Choose your payment method:`,
+        
+        es: `✨ TU PAQUETE ✨
+
+📦 Cantidad base: ${pkg.amount} look coins
+🎁 Bonus: +${pkg.bonus}%
+
+💎 TOTAL: ${pkg.total} look coins
+💳 Precio: $${pkg.price}
+
+✅ Elige tu método de pago:`,
+        
+        fr: `✨ VOTRE FORFAIT ✨
+
+📦 Quantité de base: ${pkg.amount} look coins
+🎁 Bonus: +${pkg.bonus}%
+
+💎 TOTAL: ${pkg.total} look coins
+💳 Prix: $${pkg.price}
+
+✅ Choisissez votre mode de paiement:`,
+        
+        pt: `✨ SEU PACOTE ✨
+
+📦 Quantidade base: ${pkg.amount} look coins
+🎁 Bônus: +${pkg.bonus}%
+
+💎 TOTAL: ${pkg.total} look coins
+💳 Preço: $${pkg.price}
+
+✅ Escolha seu método de pagamento:`,
+        
+        ua: `✨ ВАШ ПАКЕТ ✨
+
+📦 Базова кількість: ${pkg.amount} лук койнів
+🎁 Бонус: +${pkg.bonus}%
+
+💎 ВСЬОГО: ${pkg.total} лук койнів
+💳 Ціна: $${pkg.price}
+
+✅ Оберіть спосіб оплати:`
+    };
+    
+    return messages[locale] || messages["en"];
+}
 
 export const walletHandler = (bot: Bot<MyContext>) => {
     // Команда /wallet
@@ -19,7 +88,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        await ctx.reply(ctx.t("wallet-info", { coins: user.coins }), {
+        await ctx.replyWithPhoto(new InputFile(WALLET_IMAGE), {
+            caption: ctx.t("wallet-info", { coins: user.coins }),
             reply_markup: getTopUpKeyboard(ctx)
         });
     });
@@ -32,7 +102,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        await ctx.editMessageText(ctx.t("wallet-info", { coins: user.coins }), {
+        await ctx.replyWithPhoto(new InputFile(WALLET_IMAGE), {
+            caption: ctx.t("wallet-info", { coins: user.coins }),
             reply_markup: getTopUpKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();
@@ -43,24 +114,16 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         const amount = parseInt(ctx.match[1]);
         const pkg = getPackageInfo(amount);
 
-        await ctx.editMessageText(
-            ctx.t("topup-confirm", {
-                amount: pkg.amount,
-                bonus: pkg.bonus,
-                total: pkg.total,
-                price: pkg.price
-            }),
-            {
-                reply_markup: getPaymentMethodKeyboard(ctx, amount)
-            }
-        );
+        await ctx.reply(getPackageMessage(ctx, pkg), {
+            reply_markup: getPaymentMethodKeyboard(ctx, amount)
+        });
         await ctx.answerCallbackQuery();
     });
 
     // Свое количество
     bot.callbackQuery("topup_custom", async (ctx) => {
         awaitingCustomAmount.add(ctx.from!.id);
-        await ctx.editMessageText(ctx.t("topup-enter-amount"));
+        await ctx.reply(ctx.t("topup-enter-amount"));
         await ctx.answerCallbackQuery();
     });
 
@@ -72,7 +135,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
         const amount = parseInt(ctx.message.text);
         
-        if (isNaN(amount) || amount < 100) {
+        if (isNaN(amount) || amount < 100 || amount > 100000) {
             await ctx.reply(ctx.t("topup-invalid-amount"));
             return;
         }
@@ -80,17 +143,9 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         awaitingCustomAmount.delete(ctx.from!.id);
         const pkg = getPackageInfo(amount);
 
-        await ctx.reply(
-            ctx.t("topup-confirm", {
-                amount: pkg.amount,
-                bonus: pkg.bonus,
-                total: pkg.total,
-                price: pkg.price
-            }),
-            {
-                reply_markup: getPaymentMethodKeyboard(ctx, amount)
-            }
-        );
+        await ctx.reply(getPackageMessage(ctx, pkg), {
+            reply_markup: getPaymentMethodKeyboard(ctx, amount)
+        });
     });
 
     // ===== ОПЛАТА ЧЕРЕЗ CRYPTOBOT =====
@@ -111,8 +166,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         if (invoice) {
             pendingPayments.set(userId, { amount, total: pkg.total, invoiceId: invoice.invoice_id });
 
-            await ctx.editMessageText(
-                ctx.t("pay-crypto-info", { amount: pkg.total, price: pkg.price }),
+            await ctx.reply(
+                ctx.t("pay-crypto-info", { total: pkg.total, price: pkg.price, bonus: pkg.bonus }),
                 {
                     reply_markup: new InlineKeyboard()
                         .url(ctx.t("pay-button"), invoice.bot_invoice_url)
@@ -123,7 +178,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
                 }
             );
         } else {
-            await ctx.editMessageText(ctx.t("payment-error"));
+            await ctx.reply(ctx.t("payment-error"));
         }
     });
 
@@ -147,14 +202,14 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             }
             pendingPayments.delete(userId);
 
-            await ctx.editMessageText(
+            await ctx.reply(
                 ctx.t("topup-success", { total: pending.total, balance: user?.coins ?? 0 })
             );
             await ctx.answerCallbackQuery({ text: ctx.t("payment-success") });
         } else if (status === "expired") {
             pendingPayments.delete(userId);
             await ctx.answerCallbackQuery({ text: ctx.t("payment-expired") });
-            await ctx.editMessageText(ctx.t("payment-expired-msg"), {
+            await ctx.reply(ctx.t("payment-expired-msg"), {
                 reply_markup: getTopUpKeyboard(ctx)
             });
         } else {
@@ -168,13 +223,18 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         const pkg = getPackageInfo(amount);
         const starsPrice = Math.ceil(pkg.price * 50); // 1$ ≈ 50 звёзд
 
+        // Отправляем инструкцию
+        await ctx.reply(
+            ctx.t("pay-stars-info", { total: pkg.total, stars: starsPrice, bonus: pkg.bonus })
+        );
+
         await ctx.answerCallbackQuery();
 
         // Создаём инвойс для Telegram Stars
         await ctx.api.raw.sendInvoice({
             chat_id: ctx.chat!.id,
             title: `${pkg.total} монет`,
-            description: `Пополнение баланса на ${pkg.total} монет (включая бонус ${pkg.bonus}%)`,
+            description: `Пополнение баланса на ${pkg.total} монет`,
             payload: JSON.stringify({ userId: ctx.from!.id, amount, total: pkg.total }),
             currency: "XTR", // Telegram Stars
             prices: [{ label: `${pkg.total} монет`, amount: starsPrice }]
@@ -209,7 +269,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         const amount = parseInt(ctx.match[1]);
         const pkg = getPackageInfo(amount);
         
-        await ctx.editMessageText(
+        await ctx.reply(
             ctx.t("admin-topup-confirm", { amount: pkg.amount, total: pkg.total }),
             {
                 reply_markup: getAdminTopUpKeyboard(ctx, amount)
@@ -230,7 +290,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
         if (user) {
             user.coins += pkg.total;
-            await ctx.editMessageText(
+            await ctx.reply(
                 ctx.t("topup-success", { total: pkg.total, balance: user.coins })
             );
         }
@@ -241,7 +301,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
     bot.callbackQuery("cancel_topup", async (ctx) => {
         const user = findUser(ctx.from!.id);
         pendingPayments.delete(ctx.from!.id);
-        await ctx.editMessageText(ctx.t("wallet-info", { coins: user?.coins ?? 0 }), {
+        await ctx.replyWithPhoto(new InputFile(WALLET_IMAGE), {
+            caption: ctx.t("wallet-info", { coins: user?.coins ?? 0 }),
             reply_markup: getTopUpKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();
@@ -250,7 +311,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
     // Назад к выбору пакета
     bot.callbackQuery("back_to_packages", async (ctx) => {
         const user = findUser(ctx.from!.id);
-        await ctx.editMessageText(ctx.t("wallet-info", { coins: user?.coins ?? 0 }), {
+        await ctx.replyWithPhoto(new InputFile(WALLET_IMAGE), {
+            caption: ctx.t("wallet-info", { coins: user?.coins ?? 0 }),
             reply_markup: getTopUpKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();
@@ -258,7 +320,8 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // Назад в меню
     bot.callbackQuery("back_menu", async (ctx) => {
-        await ctx.editMessageText(ctx.t("welcome"), {
+        await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+            caption: ctx.t("welcome"),
             reply_markup: getMainMenuKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();

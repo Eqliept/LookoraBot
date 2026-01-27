@@ -1,11 +1,11 @@
 import type { Bot } from "grammy";
 import { InputFile, InlineKeyboard } from "grammy";
 import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getServicesKeyboard, getBackKeyboard } from "../keyboards/index.ts";
+import { getServicesKeyboard, getBackKeyboard, getMainMenuKeyboard } from "../keyboards/index.ts";
 import { findUser } from "../services/user.service.ts";
 import { validatePhoto, analyzeAppearance, getImprovementTips, analysisResults, getTelegramFileUrl } from "../services/gpt.service.ts";
 import type { UserPhotoSession } from "../types/index.ts";
-import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE } from "../constants/index.ts";
+import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE, MAIN_IMAGE } from "../constants/index.ts";
 import { getAppearanceUI } from "../translations/appearance.translations.ts";
 import "dotenv/config";
 
@@ -29,7 +29,7 @@ const getRatingEmoji = (value: number): string => {
 export const appearanceHandler = (bot: Bot<MyContext>) => {
     // Кнопка "Начать" -> Меню выбора услуги
     bot.callbackQuery("get_started", async (ctx) => {
-        await ctx.editMessageText(ctx.t("get-started-info"), {
+        await ctx.reply(ctx.t("get-started-info"), {
             reply_markup: getServicesKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();
@@ -45,7 +45,7 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
 
         // Проверяем баланс
         if (user.coins < APPEARANCE_COST) {
-            await ctx.editMessageText(
+            await ctx.reply(
                 ctx.t("not-enough-coins", { balance: user.coins, required: APPEARANCE_COST }),
                 { reply_markup: getBackKeyboard(ctx) }
             );

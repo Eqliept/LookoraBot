@@ -1,15 +1,17 @@
-import { Bot } from "grammy";
+import { Bot, InputFile } from "grammy";
 import type { Language } from "../states/user.state.ts";
 import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
 import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard } from "../keyboards/index.ts";
 import { userExists, createUser, updateUserLanguage } from "../services/user.service.ts";
+import { MAIN_IMAGE, HELP_IMAGE } from "../constants/index.ts";
 
 export const startHandler = (bot: Bot<MyContext>) => {
     bot.command("start", async (ctx) => {
         const userId = ctx.from!.id;
 
         if (userExists(userId)) {
-            await ctx.reply(ctx.t("welcome-back"), {
+            await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+                caption: ctx.t("welcome-back"),
                 reply_markup: getMainMenuKeyboard(ctx)
             });
         } else {
@@ -21,7 +23,8 @@ export const startHandler = (bot: Bot<MyContext>) => {
 
     // Команда /help
     bot.command("help", async (ctx) => {
-        await ctx.reply(ctx.t("help-info"), {
+        await ctx.replyWithPhoto(new InputFile(HELP_IMAGE), {
+            caption: ctx.t("help-info"),
             reply_markup: getBackKeyboard(ctx)
         });
     });
@@ -47,7 +50,8 @@ export const startHandler = (bot: Bot<MyContext>) => {
         ctx.i18n.useLocale(language.toLowerCase());
 
         await ctx.editMessageText(ctx.t("language-set"));
-        await ctx.reply(ctx.t("welcome"), {
+        await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+            caption: ctx.t("welcome"),
             reply_markup: getMainMenuKeyboard(ctx)
         });
         
@@ -55,14 +59,15 @@ export const startHandler = (bot: Bot<MyContext>) => {
     });
 
     bot.callbackQuery("change_language", async (ctx) => {
-        await ctx.editMessageText(ctx.t("select-language"), {
+        await ctx.reply(ctx.t("select-language"), {
             reply_markup: getLanguageKeyboard()
         });
         await ctx.answerCallbackQuery();
     });
 
     bot.callbackQuery("help", async (ctx) => {
-        await ctx.editMessageText(ctx.t("help-info"), {
+        await ctx.replyWithPhoto(new InputFile(HELP_IMAGE), {
+            caption: ctx.t("help-info"),
             reply_markup: getBackKeyboard(ctx)
         });
         await ctx.answerCallbackQuery();
