@@ -50,7 +50,7 @@ exports.Prisma = exports.PrismaClient = exports.$Enums = void 0;
 const process = __importStar(require("node:process"));
 const path = __importStar(require("node:path"));
 const node_url_1 = require("node:url");
-globalThis['__dirname'] = path.dirname((0, node_url_1.fileURLToPath)(import.meta.url));
+globalThis['__dirname'] = path.dirname((0, node_url_1.fileURLToPath)(__dirname.url));
 const runtime = __importStar(require("@prisma/client/runtime/client"));
 const $Enums = __importStar(require("./enums.ts"));
 const $Class = __importStar(require("./internal/class.ts"));
