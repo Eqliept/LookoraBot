@@ -6,8 +6,8 @@ export type MyContext = Context & I18nFlavor;
 
 export const autoLanguageMiddleware = async (ctx: MyContext, next: () => Promise<void>) => {
     if (ctx.from) {
-        const user = findUser(ctx.from.id);
-        if (user) {
+        const user = await findUser(ctx.from.id);
+        if (user?.language) {
             ctx.i18n.useLocale(user.language.toLowerCase());
         }
     }
@@ -16,7 +16,7 @@ export const autoLanguageMiddleware = async (ctx: MyContext, next: () => Promise
 
 /**
  * Middleware для проверки авторизации пользователя
- * Пропускает только /start и выбор языка для неавторизованных
+ * Пропускает только /start, выбор языка и соглашение для неавторизованных
  */
 export const authMiddleware = async (ctx: MyContext, next: () => Promise<void>) => {
     // Пропускаем команду /start
@@ -29,9 +29,14 @@ export const authMiddleware = async (ctx: MyContext, next: () => Promise<void>) 
         return next();
     }
 
+    // Пропускаем callback'и лицензионного соглашения (нужны до регистрации)
+    if (ctx.callbackQuery?.data === "read_agreement" || ctx.callbackQuery?.data === "accept_agreement") {
+        return next();
+    }
+
     // Проверяем авторизацию
     if (ctx.from) {
-        const user = findUser(ctx.from.id);
+        const user = await findUser(ctx.from.id);
         if (user) {
             return next();
         }

@@ -14,6 +14,34 @@ export interface UserPhotoSession {
     frontPhotoUrl?: string;
 }
 
+// Категории стиля
+export type StyleCategory = "casual" | "work" | "date" | "social" | "event" | "custom";
+
+// Сессия оценки стиля
+export interface StylePhotoSession {
+    category: StyleCategory;
+    customDescription?: string;
+}
+
+// Результат анализа стиля
+export interface StyleScores {
+    colorHarmony: number;      // Гармония цветов
+    fit: number;               // Посадка одежды
+    styleConsistency: number;  // Единство стиля
+    accessories: number;       // Аксессуары
+    seasonality: number;       // Соответствие сезону
+    contextMatch: number;      // Соответствие контексту
+}
+
+export interface StyleAnalysisResult {
+    scores: StyleScores;
+    totalScore: number;
+    overallCoefficient: number; // Коэффициент соответствия контексту (0.3-1.0)
+    strengths: string[];       // Сильные стороны
+    improvements: string[];    // Что улучшить
+    recommendations: string[]; // Рекомендации
+}
+
 // Результат валидации фото
 export interface PhotoValidationResult {
     isValid: boolean;
@@ -39,7 +67,6 @@ export interface AppearanceAnalysisResult {
     weakPoints: string[];  // Слабые места для улучшения
 }
 
-// UI переводы для appearance handler
 export interface AppearanceUITranslations {
     totalScore: string;
     impression: string;
@@ -70,7 +97,6 @@ export interface AppearanceUITranslations {
     backToMenu: string;
 }
 
-// GPT переводы
 export interface GPTTranslationLabels {
     eyes: string;
     nose: string;

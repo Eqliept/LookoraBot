@@ -1,8 +1,13 @@
 {
   "dependencies": {
     "@grammyjs/i18n": "^1.1.2",
+    "@prisma/client": "^6.19.2",
     "dotenv": "^17.2.3",
-    "grammy": "^1.39.3"
+    "grammy": "^1.39.3",
+    "prisma": "^6.19.2"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.0.10"
+  }
 }

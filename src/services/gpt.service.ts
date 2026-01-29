@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult } from "../types/index.ts";
+import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult, StyleCategory, StyleScores, StyleAnalysisResult } from "../types/index.ts";
 import { getGPTTranslation } from "../translations/gpt.translations.ts";
 
 const OPENAI_API_KEY = process.env.OPEN_API!;
@@ -368,4 +368,237 @@ export const getTelegramFileUrl = async (
     } catch (error) {
         return null;
     }
+};
+
+// Хранилище результатов стиля
+export const styleAnalysisResults = new Map<number, StyleAnalysisResult>();
+
+/**
+ * Валидация фото для анализа стиля (полный рост)
+ */
+export const validateStylePhoto = async (
+    photoUrl: string,
+    lang: Language = "EN"
+): Promise<PhotoValidationResult> => {
+    const t = getGPTTranslation(lang);
+    
+    const prompt = `Check if this FULL BODY photo is suitable for style analysis.
+
+Check:
+1. Is the person visible from head to toe (full body)
+2. Are clothes and outfit clearly visible
+3. Is there enough lighting
+4. Is there no strong blur
+
+Don't be too strict. If the outfit is visible - the photo is suitable.
+
+If everything is OK, answer ONLY JSON: {"isValid": true}
+If there are serious problems, answer ONLY JSON (error message ${t.errorLanguage}):
+{"isValid": false, "error": "Short reason"}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: photoUrl, detail: "low" } }
+                        ]
+                    }
+                ],
+                max_tokens: 300
+            })
+        });
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || "";
+        
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+            return {
+                isValid: result.isValid,
+                error: result.error || undefined
+            };
+        }
+        
+        return { isValid: true };
+    } catch (error) {
+        return { isValid: true };
+    }
+};
+
+/**
+ * Анализ стиля через GPT Vision
+ */
+export const analyzeStyle = async (
+    photoUrl: string,
+    category: StyleCategory,
+    customDescription: string | undefined,
+    lang: Language = "EN"
+): Promise<StyleAnalysisResult> => {
+    const categoryDescriptions: Record<StyleCategory, string> = {
+        casual: "Casual everyday style - for walks, meeting friends, shopping",
+        work: "Work/study style - for office, university, business situations",
+        date: "Date style - for romantic context",
+        social: "Social media / public image - for photos, videos, content, personal brand",
+        event: "Event style - for parties, events, going out",
+        custom: customDescription || "Custom context"
+    };
+
+    const contextDescription = categoryDescriptions[category];
+
+    const langInstructions: Record<Language, string> = {
+        RU: "на русском языке",
+        EN: "in English",
+        ES: "en español",
+        FR: "en français",
+        PT: "em português",
+        UA: "українською мовою"
+    };
+
+    const prompt = `Analyze this person's STYLE and OUTFIT for the context: "${contextDescription}"
+
+Rate EACH parameter on a scale from 30 to 100:
+1. colorHarmony - Color harmony (how well colors work together)
+2. fit - Fit (how well clothes fit the body)
+3. styleConsistency - Style consistency (unified look)
+4. accessories - Accessories (appropriate and matching)
+5. seasonality - Seasonality (appropriate for weather/season visible)
+6. contextMatch - Context match (how appropriate for: ${contextDescription})
+
+ALSO rate "contextCoefficient" - how well this outfit matches the specific context (from 0.3 to 1.0):
+- 1.0 = perfect match for the context (e.g., elegant dress for a wedding)
+- 0.8-0.9 = good match, minor issues
+- 0.6-0.7 = acceptable but not ideal
+- 0.4-0.5 = weak match, significant mismatch
+- 0.3 = completely wrong for context (e.g., beachwear for a business meeting)
+
+This coefficient reflects how appropriate the OVERALL outfit is for: ${contextDescription}
+
+Also provide:
+- strengths: Array of 2-3 strong points of the outfit (${langInstructions[lang]})
+- improvements: Array of 2-3 things to improve (${langInstructions[lang]})
+- recommendations: Array of 2-3 specific recommendations - what to add/remove/change (${langInstructions[lang]})
+
+Be objective and constructive. Focus on actionable advice.
+
+Answer ONLY in JSON format:
+{
+    "colorHarmony": number 30-100,
+    "fit": number 30-100,
+    "styleConsistency": number 30-100,
+    "accessories": number 30-100,
+    "seasonality": number 30-100,
+    "contextMatch": number 30-100,
+    "contextCoefficient": number 0.3-1.0,
+    "strengths": ["string", "string"],
+    "improvements": ["string", "string"],
+    "recommendations": ["string", "string"]
+}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: photoUrl } }
+                        ]
+                    }
+                ],
+                max_tokens: 800
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            return getDefaultStyleResult(lang);
+        }
+        
+        const content = data.choices?.[0]?.message?.content || "";
+        
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const raw = JSON.parse(jsonMatch[0]);
+            
+            const clamp = (val: number) => Math.min(100, Math.max(30, Number(val) || 50));
+            
+            // Получаем коэффициент соответствия контексту (0.3-1.0)
+            const overallCoefficient = Math.min(1.0, Math.max(0.3, Number(raw.contextCoefficient) || 0.7));
+            
+            const scores: StyleScores = {
+                colorHarmony: clamp(raw.colorHarmony),
+                fit: clamp(raw.fit),
+                styleConsistency: clamp(raw.styleConsistency),
+                accessories: clamp(raw.accessories),
+                seasonality: clamp(raw.seasonality),
+                contextMatch: clamp(raw.contextMatch)
+            };
+            
+            // Применяем коэффициент к общей оценке
+            const values = Object.values(scores);
+            const baseScore = values.reduce((a, b) => a + b, 0) / values.length;
+            const totalScore = Math.round(baseScore * overallCoefficient);
+            
+            return {
+                scores,
+                totalScore,
+                overallCoefficient,
+                strengths: raw.strengths || [],
+                improvements: raw.improvements || [],
+                recommendations: raw.recommendations || []
+            };
+        }
+        
+        return getDefaultStyleResult(lang);
+    } catch (error) {
+        return getDefaultStyleResult(lang);
+    }
+};
+
+const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
+    const defaultMessages: Record<Language, { strength: string; improvement: string; recommendation: string }> = {
+        RU: { strength: "Анализ недоступен", improvement: "Попробуйте другое фото", recommendation: "Загрузите чёткое фото" },
+        EN: { strength: "Analysis unavailable", improvement: "Try another photo", recommendation: "Upload a clear photo" },
+        ES: { strength: "Análisis no disponible", improvement: "Pruebe otra foto", recommendation: "Suba una foto clara" },
+        FR: { strength: "Analyse non disponible", improvement: "Essayez une autre photo", recommendation: "Téléchargez une photo claire" },
+        PT: { strength: "Análise indisponível", improvement: "Tente outra foto", recommendation: "Envie uma foto clara" },
+        UA: { strength: "Аналіз недоступний", improvement: "Спробуйте інше фото", recommendation: "Завантажте чітке фото" }
+    };
+    
+    const msg = defaultMessages[lang] || defaultMessages.EN;
+    
+    return {
+        scores: {
+            colorHarmony: 50,
+            fit: 50,
+            styleConsistency: 50,
+            accessories: 50,
+            seasonality: 50,
+            contextMatch: 50
+        },
+        totalScore: 50,
+        overallCoefficient: 1.0,
+        strengths: [msg.strength],
+        improvements: [msg.improvement],
+        recommendations: [msg.recommendation]
+    };
 };
