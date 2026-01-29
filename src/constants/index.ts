@@ -4,7 +4,7 @@ export const STYLE_COST = 100;
 
 export const ADMIN_ID = 1529335902;
 
-const IMAGES_DIR = new URL("../images/", __dirname.url).pathname.slice(1);
+const IMAGES_DIR = new URL("../images/", __dirname).pathname.slice(1);
 export const FRONT_PHOTO_EXAMPLE = `${IMAGES_DIR}front_photo.png`;
 export const SIDE_PHOTO_EXAMPLE = `${IMAGES_DIR}side_photo.png`;
 export const FULL_BODY_PHOTO_EXAMPLE = `${IMAGES_DIR}full_body_photo.png`;
