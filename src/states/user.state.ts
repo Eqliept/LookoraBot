@@ -1,4 +1,4 @@
-import type { Language, User } from "../types/index.ts";
+import type { Language, User } from "../types/index.js";
 
 export type { Language };
 

@@ -1,4 +1,4 @@
-import type { Language, StyleCategory } from "../types/index.ts";
+import type { Language, StyleCategory } from "../types/index.js";
 
 export interface StyleUITranslations {
     selectCategory: string;
@@ -277,7 +277,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
     }
 };
 
-export const getStyleUI = (lang: Language) => styleUITranslations[lang] || styleUITranslations.EN;
+export const getStyleUI = (lang: Language) => styleUITranslations[lang] || styleUITranslations.EN!;
 
 // Получение названия категории на нужном языке
 export const getCategoryName = (category: StyleCategory, lang: Language): string => {

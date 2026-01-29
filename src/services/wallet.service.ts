@@ -1,4 +1,4 @@
-import type { Language } from "../states/user.state.ts";
+import type { Language } from "../states/user.state.js";
 
 export interface TopUpPackage {
     amount: number;

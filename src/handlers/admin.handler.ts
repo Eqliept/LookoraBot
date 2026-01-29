@@ -1,7 +1,7 @@
 import { Bot } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { ADMIN_ID } from "../constants/index.ts";
-import { findUser, addCoinsToUser } from "../services/user.service.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { ADMIN_ID } from "../constants/index.js";
+import { findUser, addCoinsToUser } from "../services/user.service.js";
 
 const awaitingGiveCoins = new Map<number, { step: "user_id" | "amount"; targetUserId?: number }>();
 
@@ -15,8 +15,8 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         const args = ctx.message?.text?.split(" ").slice(1) || [];
         
         if (args.length === 2) {
-            const targetId = parseInt(args[0]);
-            const amount = parseInt(args[1]);
+            const targetId = parseInt(args[0]!);
+            const amount = parseInt(args[1]!);
             
             if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
                 await ctx.reply("❌ Неверный формат. Используйте: /give <telegram_id> <количество>");
@@ -36,7 +36,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        const { prisma } = await import("../services/database.service.ts");
+        const { prisma } = await import("../services/database.service.js");
         
         const totalUsers = await prisma.user.count();
         const totalCoins = await prisma.user.aggregate({

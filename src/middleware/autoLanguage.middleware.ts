@@ -1,5 +1,5 @@
 import { Context } from "grammy";
-import { findUser } from "../services/user.service.ts";
+import { findUser } from "../services/user.service.js";
 import type { I18nFlavor } from "@grammyjs/i18n";
 
 export type MyContext = Context & I18nFlavor;

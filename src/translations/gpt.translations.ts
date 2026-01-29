@@ -1,4 +1,4 @@
-import type { Language, GPTTranslation } from "../types/index.ts";
+import type { Language, GPTTranslation } from "../types/index.js";
 
 export const gptTranslations: Record<Language, GPTTranslation> = {
     RU: {

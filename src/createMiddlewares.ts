@@ -1,6 +1,6 @@
 import type { Bot } from "grammy";
 import { I18n } from "@grammyjs/i18n";
-import { autoLanguageMiddleware, authMiddleware, type MyContext } from "./middleware/autoLanguage.middleware.ts";
+import { autoLanguageMiddleware, authMiddleware, type MyContext } from "./middleware/autoLanguage.middleware.js";
 
 import en from "./languages/en.json" with { type: "json" };
 import es from "./languages/es.json" with { type: "json" };

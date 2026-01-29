@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { padText } from "./utils.ts";
-import { APPEARANCE_COST, STYLE_COST } from "../constants/index.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { padText } from "./utils.js";
+import { APPEARANCE_COST, STYLE_COST } from "../constants/index.js";
 
 /**
  * Клавиатура выбора услуги (Начать)

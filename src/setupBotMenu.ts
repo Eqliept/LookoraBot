@@ -1,7 +1,7 @@
 import type { Bot } from "grammy";
 import type { LanguageCode } from "grammy/types";
-import type { MyContext } from "./middleware/autoLanguage.middleware.ts";
-import type { Language } from "./types/index.ts";
+import type { MyContext } from "./middleware/autoLanguage.middleware.js";
+import type { Language } from "./types/index.js";
 
 // Команды бота для разных языков
 const commandTranslations: Record<Language, { start: string; wallet: string; help: string; language: string }> = {
@@ -68,16 +68,16 @@ export async function setupBotCommands(bot: Bot<MyContext>) {
                 { command: "help", description: translations.help },
                 { command: "language", description: translations.language }
             ],
-            { language_code: languageCode }
+            { language_code: languageCode! }
         );
     }
 
     // Устанавливаем команды по умолчанию (английский)
     await bot.api.setMyCommands([
-        { command: "start", description: commandTranslations.EN.start },
-        { command: "wallet", description: commandTranslations.EN.wallet },
-        { command: "help", description: commandTranslations.EN.help },
-        { command: "language", description: commandTranslations.EN.language }
+        { command: "start", description: commandTranslations.EN!.start },
+        { command: "wallet", description: commandTranslations.EN!.wallet },
+        { command: "help", description: commandTranslations.EN!.help },
+        { command: "language", description: commandTranslations.EN!.language }
     ]);
 
     console.log("✅ Bot commands menu set up successfully");

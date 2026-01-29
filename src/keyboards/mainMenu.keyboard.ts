@@ -1,6 +1,6 @@
 import { InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { padText } from "./utils.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { padText } from "./utils.js";
 
 export const getMainMenuKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()

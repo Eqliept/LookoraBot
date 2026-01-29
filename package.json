@@ -8,6 +8,13 @@
   },
   "type": "module",
   "devDependencies": {
-    "@types/node": "^25.0.10"
+    "@types/node": "^25.0.10",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "tsc && npm run copy-images",
+    "copy-images": "powershell -Command \"Copy-Item -Path 'src/images' -Destination 'dist/images' -Recurse -Force\"",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
   }
 }

@@ -1,12 +1,12 @@
 import { Bot, InputFile, InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getTopUpKeyboard, getMainMenuKeyboard, getPaymentMethodKeyboard, getAdminTopUpKeyboard, getBuyForKeyboard, getGiftPackageKeyboard, getGiftPaymentKeyboard } from "../keyboards/index.ts";
-import { getPackageInfo } from "../services/wallet.service.ts";
-import { findUser, addCoinsToUser } from "../services/user.service.ts";
-import { createCryptoBotInvoice, checkInvoiceStatus } from "../services/cryptobot.service.ts";
-import { ADMIN_ID, WALLET_IMAGE, MAIN_IMAGE } from "../constants/index.ts";
-import { getWelcomeBackMessage } from "./start.handler.ts";
-import type { Language } from "../types/index.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getTopUpKeyboard, getMainMenuKeyboard, getPaymentMethodKeyboard, getAdminTopUpKeyboard, getBuyForKeyboard, getGiftPackageKeyboard, getGiftPaymentKeyboard } from "../keyboards/index.js";
+import { getPackageInfo } from "../services/wallet.service.js";
+import { findUser, addCoinsToUser } from "../services/user.service.js";
+import { createCryptoBotInvoice, checkInvoiceStatus } from "../services/cryptobot.service.js";
+import { ADMIN_ID, WALLET_IMAGE, MAIN_IMAGE } from "../constants/index.js";
+import { getWelcomeBackMessage } from "./start.handler.js";
+import type { Language } from "../types/index.js";
 
 const awaitingCustomAmount = new Set<number>();
 const pendingPayments = new Map<number, { amount: number; total: number; invoiceId?: number }>();
@@ -16,7 +16,7 @@ interface GiftState {
     recipientId?: number;
     amount?: number;
     total?: number;
-    message?: string;
+    message?: string | undefined;
     awaitingId?: boolean;
     awaitingMessage?: boolean;
 }
@@ -52,11 +52,11 @@ function getGiftNotification(lang: Language, coins: number, message?: string): s
     };
     
     const texts = notifications[lang] || notifications.EN;
-    return message && message !== "-" ? texts.withMsg : texts.noMsg;
+    return message && message !== "-" ? texts!.withMsg : texts!.noMsg;
 }
 
 // Функция для красивого сообщения о пакете
-async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: number; total: number; price: number }) {
+async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: number; total: number; price: number }): Promise<string> {
     const user = await findUser(ctx.from!.id);
     const locale = user?.language?.toLowerCase() || "en";
     
@@ -122,7 +122,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 ✅ Оберіть спосіб оплати:`
     };
     
-    return messages[locale] || messages["en"];
+    return messages[locale] || messages["en"]!;
 }
 
 export const walletHandler = (bot: Bot<MyContext>) => {
@@ -172,7 +172,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // Выбор пакета
     bot.callbackQuery(/^topup_(500|1000|3000)$/, async (ctx) => {
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
 
         await ctx.reply(await getPackageMessage(ctx, pkg), {
@@ -244,9 +244,10 @@ export const walletHandler = (bot: Bot<MyContext>) => {
                 return;
             }
             
+            const newMessage = message !== "-" ? message : undefined;
             giftStates.set(userId, { 
                 ...giftState, 
-                message: message !== "-" ? message : undefined,
+                message: newMessage,
                 awaitingMessage: false 
             });
             
@@ -317,7 +318,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
         
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         
         giftStates.set(userId, { 
@@ -348,7 +349,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
         
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
 
         await ctx.answerCallbackQuery({ text: ctx.t("creating-invoice") });
@@ -392,7 +393,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // Проверка оплаты подарка CryptoBot
     bot.callbackQuery(/^check_gift_crypto_(\d+)$/, async (ctx) => {
-        const invoiceId = parseInt(ctx.match[1]);
+        const invoiceId = parseInt(ctx.match[1]!);
         const userId = ctx.from!.id;
         const pending = pendingPayments.get(userId);
         const giftState = giftStates.get(userId);
@@ -448,7 +449,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
         
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         const starsPrice = Math.ceil(pkg.price * 50); // 1$ ≈ 50 звёзд
 
@@ -482,7 +483,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // ===== ОПЛАТА ЧЕРЕЗ CRYPTOBOT =====
     bot.callbackQuery(/^pay_crypto_(\d+)$/, async (ctx) => {
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         const userId = ctx.from!.id;
 
@@ -516,7 +517,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // Проверка оплаты CryptoBot
     bot.callbackQuery(/^check_crypto_(\d+)$/, async (ctx) => {
-        const invoiceId = parseInt(ctx.match[1]);
+        const invoiceId = parseInt(ctx.match[1]!);
         const userId = ctx.from!.id;
         const pending = pendingPayments.get(userId);
 
@@ -548,7 +549,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
     // ===== ОПЛАТА ЧЕРЕЗ TELEGRAM STARS =====
     bot.callbackQuery(/^pay_stars_(\d+)$/, async (ctx) => {
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         const starsPrice = Math.ceil(pkg.price * 50); // 1$ ≈ 50 звёзд
 
@@ -617,7 +618,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         
         await ctx.reply(
@@ -635,7 +636,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        const amount = parseInt(ctx.match[1]);
+        const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
         const user = await addCoinsToUser(ctx.from!.id, pkg.total);
 

@@ -1,4 +1,4 @@
-import type { Language, AppearanceUITranslations } from "../types/index.ts";
+import type { Language, AppearanceUITranslations } from "../types/index.js";
 
 export const appearanceUITranslations: Record<Language, AppearanceUITranslations> = {
     RU: {

@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getPackageInfo } from "../services/wallet.service.ts";
-import { padText } from "./utils.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getPackageInfo } from "../services/wallet.service.js";
+import { padText } from "./utils.js";
 
 // Клавиатура выбора: купить себе или подарить
 export const getBuyForKeyboard = (ctx: MyContext): InlineKeyboard => {

@@ -1,6 +1,6 @@
 import "dotenv/config";
-import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult, StyleCategory, StyleScores, StyleAnalysisResult } from "../types/index.ts";
-import { getGPTTranslation } from "../translations/gpt.translations.ts";
+import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult, StyleCategory, StyleScores, StyleAnalysisResult } from "../types/index.js";
+import { getGPTTranslation } from "../translations/gpt.translations.js";
 
 const OPENAI_API_KEY = process.env.OPEN_API!;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
@@ -198,14 +198,14 @@ Answer ONLY in JSON format:
             };
             
             // Вычисляем общую оценку как среднее
-            const values = Object.values(scores);
+            const values = Object.values(scores) as number[];
             const totalScore = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
             
             // Находим слабые места (ниже 60) - используем переведённые метки
             const weakPoints: string[] = [];
             
             for (const [key, value] of Object.entries(scores)) {
-                if (value < 60) {
+                if ((value as number) < 60) {
                     weakPoints.push(t.labels[key as keyof AppearanceScores]);
                 }
             }
@@ -241,7 +241,7 @@ export const getImprovementTips = async (
     // Сортируем параметры по оценке (от худших к лучшим)
     const sortedScores = Object.entries(result.scores)
         .map(([key, value]) => {
-            return { key, label: t.labels[key as keyof AppearanceScores], score: value };
+            return { key, label: t.labels[key as keyof AppearanceScores], score: value as number };
         })
         .sort((a, b) => a.score - b.score);
     
@@ -554,7 +554,7 @@ Answer ONLY in JSON format:
             };
             
             // Применяем коэффициент к общей оценке
-            const values = Object.values(scores);
+            const values = Object.values(scores) as number[];
             const baseScore = values.reduce((a, b) => a + b, 0) / values.length;
             const totalScore = Math.round(baseScore * overallCoefficient);
             
@@ -597,8 +597,8 @@ const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
         },
         totalScore: 50,
         overallCoefficient: 1.0,
-        strengths: [msg.strength],
-        improvements: [msg.improvement],
-        recommendations: [msg.recommendation]
+        strengths: [msg?.strength ?? ""],
+        improvements: [msg?.improvement ?? ""],
+        recommendations: [msg?.recommendation ?? ""]
     };
 };

@@ -1,9 +1,9 @@
 import { Bot, InputFile } from "grammy";
-import type { Language } from "../states/user.state.ts";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang } from "../keyboards/index.ts";
-import { userExists, createUser, updateUserLanguage, findUser } from "../services/user.service.ts";
-import { MAIN_IMAGE, HELP_IMAGE } from "../constants/index.ts";
+import type { Language } from "../states/user.state.js";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang } from "../keyboards/index.js";
+import { userExists, createUser, updateUserLanguage, findUser } from "../services/user.service.js";
+import { MAIN_IMAGE, HELP_IMAGE } from "../constants/index.js";
 import { 
     getHowToUseText, 
     getAppearanceHelpText, 
@@ -13,8 +13,8 @@ import {
     getHelpMenuText,
     getAgreementInfoText,
     getAgreementAcceptedText
-} from "../translations/help.translations.ts";
-import type { Language as TypedLanguage } from "../types/index.ts";
+} from "../translations/help.translations.js";
+import type { Language as TypedLanguage } from "../types/index.js";
 
 // Хранилище для пользователей, ожидающих принятия соглашения
 const pendingAgreement = new Map<number, Language>();
@@ -98,7 +98,7 @@ export async function getWelcomeMessage(ctx: MyContext): Promise<string> {
 👇 Escolha uma ação:`
     };
     
-    return messages[locale] || messages.en;
+    return messages[locale] || messages.en!;
 }
 
 // Функция для сообщения "с возвращением"
@@ -144,7 +144,7 @@ export async function getWelcomeBackMessage(ctx: MyContext): Promise<string> {
 👇 Escolha uma ação:`
     };
     
-    return messages[locale] || messages.en;
+    return messages[locale] || messages.en!;
 }
 
 export const startHandler = (bot: Bot<MyContext>) => {

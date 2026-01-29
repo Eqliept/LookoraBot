@@ -1,8 +1,8 @@
 import { InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getPackageInfo } from "../services/wallet.service.ts";
-import { ADMIN_ID } from "../constants/index.ts";
-import { padText } from "./utils.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getPackageInfo } from "../services/wallet.service.js";
+import { ADMIN_ID } from "../constants/index.js";
+import { padText } from "./utils.js";
 
 export const getPaymentMethodKeyboard = (ctx: MyContext, amount: number): InlineKeyboard => {
     const pkg = getPackageInfo(amount);

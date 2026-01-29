@@ -1,7 +1,7 @@
 import { InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { padText } from "./utils.ts";
-import type { Language } from "../types/index.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { padText } from "./utils.js";
+import type { Language } from "../types/index.js";
 
 // Переводы кнопок для незарегистрированных пользователей
 const agreementButtonTexts: Record<Language, { accept: string; read: string }> = {
@@ -27,7 +27,7 @@ export const getAgreementKeyboard = (ctx: MyContext): InlineKeyboard => {
  * Клавиатура принятия лицензионного соглашения (для регистрации - без ctx.t)
  */
 export const getAgreementKeyboardByLang = (lang: Language): InlineKeyboard => {
-    const texts = agreementButtonTexts[lang] || agreementButtonTexts.EN;
+    const texts = agreementButtonTexts[lang] || agreementButtonTexts.EN!;
     return new InlineKeyboard()
         .text(padText(texts.accept), "accept_agreement")
         .row()

@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import { padText } from "./utils.ts";
+import { padText } from "./utils.js";
 
 export const getLanguageKeyboard = (): InlineKeyboard => {
     return new InlineKeyboard()

@@ -1,12 +1,12 @@
 import type { Bot } from "grammy";
 import { InputFile, InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getServicesKeyboard, getBackKeyboard, getMainMenuKeyboard } from "../keyboards/index.ts";
-import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.ts";
-import { validatePhoto, analyzeAppearance, getImprovementTips, analysisResults, getTelegramFileUrl } from "../services/gpt.service.ts";
-import type { UserPhotoSession } from "../types/index.ts";
-import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE, MAIN_IMAGE } from "../constants/index.ts";
-import { getAppearanceUI } from "../translations/appearance.translations.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getServicesKeyboard, getBackKeyboard, getMainMenuKeyboard } from "../keyboards/index.js";
+import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.js";
+import { validatePhoto, analyzeAppearance, getImprovementTips, analysisResults, getTelegramFileUrl } from "../services/gpt.service.js";
+import type { UserPhotoSession } from "../types/index.js";
+import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE, MAIN_IMAGE } from "../constants/index.js";
+import { getAppearanceUI } from "../translations/appearance.translations.js";
 import "dotenv/config";
 import * as process from "node:process";
 
@@ -65,7 +65,7 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
         const user = await findUser(ctx.from!.id);
         if (!user) return next();
 
-        const photo = ctx.message.photo[ctx.message.photo.length - 1];
+        const photo = ctx.message.photo[ctx.message.photo.length - 1]!;
         const photoUrl = await getTelegramFileUrl(process.env.BOT_TOKEN!, photo.file_id);
 
         if (!photoUrl) {

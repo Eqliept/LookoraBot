@@ -1,5 +1,5 @@
-import type { Language } from "../states/user.state.ts";
-import { prisma } from "./database.service.ts";
+import type { Language } from "../states/user.state.js";
+import { prisma } from "./database.service.js";
 
 export interface UserData {
     id: string;

@@ -1,10 +1,10 @@
 import { Bot } from "grammy";
 import "dotenv/config";
-import { createHandlers } from "./src/createHandlers.ts";
-import { createGuards } from "./src/createGuards.ts";
-import { createMiddlewares } from "./src/createMiddlewares.ts";
-import { setupBotCommands } from "./src/setupBotMenu.ts";
-import type { MyContext } from "./src/middleware/autoLanguage.middleware.ts";
+import { createHandlers } from "./createHandlers.js";
+import { createGuards } from "./createGuards.js";
+import { createMiddlewares } from "./createMiddlewares.js";
+import { setupBotCommands } from "./setupBotMenu.js";
+import type { MyContext } from "./middleware/autoLanguage.middleware.js";
 
 const bot = new Bot<MyContext>(process.env.BOT_TOKEN!);
 

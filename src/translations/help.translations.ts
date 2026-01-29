@@ -1,4 +1,4 @@
-import type { Language } from "../types/index.ts";
+import type { Language } from "../types/index.js";
 
 // Как пользоваться
 export const getHowToUseText = (lang: Language): string => {
@@ -153,7 +153,7 @@ export const getHowToUseText = (lang: Language): string => {
 /help - Esta ajuda
 /language - Mudar idioma`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Об оценке внешности
@@ -303,7 +303,7 @@ Analisamos 8 parâmetros principais:
 
 Este coeficiente afeta a pontuação final. Cuidado pessoal importa!`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Об оценке стиля
@@ -429,7 +429,7 @@ Este multiplicador (×0.3 - ×1.0) mostra quão bem o visual combina com o conte
 
 Exemplo: roupa de praia em casamento recebe coeficiente baixo.`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 export const getCoinsHelpText = (lang: Language): string => {
@@ -542,7 +542,7 @@ Look coins são a moeda interna do bot para serviços.
 ✨ BÔNUS
 Pacotes maiores significam mais bônus de coins!`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Лицензионное соглашение
@@ -680,7 +680,7 @@ A administração do bot:
 
 Ao clicar em «Aceitar», você aceita todos os termos.`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Текст меню помощи
@@ -705,7 +705,7 @@ Sélectionnez une section pour en savoir plus sur le bot:`,
 
 Selecione uma seção para saber mais sobre o bot:`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Информация о необходимости принять соглашение при регистрации
@@ -742,7 +742,7 @@ Para usar o bot Lookora, você precisa ler e aceitar o acordo de licença.
 
 Clique em «Ler» para ver o texto completo, ou «Aceitar» se você concorda com os termos.`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Текст предупреждения о соглашении
@@ -755,7 +755,7 @@ export const getMustAcceptText = (lang: Language): string => {
         FR: `⚠️ Vous devez accepter l'accord de licence pour utiliser ce bot.`,
         PT: `⚠️ Você deve aceitar o acordo de licença para usar este bot.`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };
 
 // Текст принятия соглашения
@@ -768,5 +768,5 @@ export const getAgreementAcceptedText = (lang: Language): string => {
         FR: `✅ Accord accepté. Bienvenue!`,
         PT: `✅ Acordo aceito. Bem-vindo!`
     };
-    return texts[lang] || texts.EN;
+    return texts[lang] || texts.EN!;
 };

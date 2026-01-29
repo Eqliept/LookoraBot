@@ -1,12 +1,12 @@
 import type { Bot } from "grammy";
 import { InputFile, InlineKeyboard } from "grammy";
-import type { MyContext } from "../middleware/autoLanguage.middleware.ts";
-import { getStyleCategoryKeyboard, getBackKeyboard } from "../keyboards/index.ts";
-import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.ts";
-import { validateStylePhoto, analyzeStyle, styleAnalysisResults, getTelegramFileUrl } from "../services/gpt.service.ts";
-import type { StylePhotoSession, StyleCategory } from "../types/index.ts";
-import { STYLE_COST, FULL_BODY_PHOTO_EXAMPLE } from "../constants/index.ts";
-import { getStyleUI, getCategoryName, getCategoryDescription } from "../translations/style.translations.ts";
+import type { MyContext } from "../middleware/autoLanguage.middleware.js";
+import { getStyleCategoryKeyboard, getBackKeyboard } from "../keyboards/index.js";
+import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.js";
+import { validateStylePhoto, analyzeStyle, styleAnalysisResults, getTelegramFileUrl } from "../services/gpt.service.js";
+import type { StylePhotoSession, StyleCategory } from "../types/index.js";
+import { STYLE_COST, FULL_BODY_PHOTO_EXAMPLE } from "../constants/index.js";
+import { getStyleUI, getCategoryName, getCategoryDescription } from "../translations/style.translations.js";
 import "dotenv/config";
 import * as process from "node:process";
 import * as fs from "node:fs";
@@ -143,7 +143,7 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         const ui = getStyleUI(user.language as any || "EN");
 
         // Получаем URL фото
-        const photo = ctx.message.photo[ctx.message.photo.length - 1];
+        const photo = ctx.message.photo[ctx.message.photo.length - 1]!;
         const photoUrl = await getTelegramFileUrl(process.env.BOT_TOKEN!, photo.file_id);
 
         if (!photoUrl) {
@@ -238,13 +238,13 @@ ${ui.contextMatch}: ${s.contextMatch}/100
 ${getProgressBar(s.contextMatch)}
 
 ${ui.strengths}:
-${result.strengths.map(s => `✅ ${s}`).join("\n")}
+${result.strengths.map((s: string) => `✅ ${s}`).join("\n")}
 
 ${ui.improvements}:
-${result.improvements.map(i => `🔸 ${i}`).join("\n")}
+${result.improvements.map((i: string) => `🔸 ${i}`).join("\n")}
 
 ${ui.recommendations}:
-${result.recommendations.map(r => `💡 ${r}`).join("\n")}
+${result.recommendations.map((r: string) => `💡 ${r}`).join("\n")}
 
 💎 ${ui.charged} ${STYLE_COST} coins
 💎 ${ui.remaining} ${updatedUser?.coins ?? 0} coins`;

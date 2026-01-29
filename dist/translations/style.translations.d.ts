@@ -1,0 +1,45 @@
+import type { Language, StyleCategory } from "../types/index.js";
+export interface StyleUITranslations {
+    selectCategory: string;
+    casualTitle: string;
+    casualDesc: string;
+    workTitle: string;
+    workDesc: string;
+    dateTitle: string;
+    dateDesc: string;
+    socialTitle: string;
+    socialDesc: string;
+    eventTitle: string;
+    eventDesc: string;
+    customTitle: string;
+    customDesc: string;
+    enterCustomDesc: string;
+    invalidCustomDesc: string;
+    sendFullBodyPhoto: string;
+    analyzingStyle: string;
+    styleResultTitle: string;
+    totalScore: string;
+    contextCoefficient: string;
+    perfectMatch: string;
+    goodMatch: string;
+    normalMatch: string;
+    weakMatch: string;
+    poorMatch: string;
+    colorHarmony: string;
+    fit: string;
+    styleConsistency: string;
+    accessories: string;
+    seasonality: string;
+    contextMatch: string;
+    strengths: string;
+    improvements: string;
+    recommendations: string;
+    charged: string;
+    remaining: string;
+    backToMenu: string;
+}
+export declare const styleUITranslations: Record<Language, StyleUITranslations>;
+export declare const getStyleUI: (lang: Language) => StyleUITranslations;
+export declare const getCategoryName: (category: StyleCategory, lang: Language) => string;
+export declare const getCategoryDescription: (category: StyleCategory, lang: Language) => string;
+//# sourceMappingURL=style.translations.d.ts.map
