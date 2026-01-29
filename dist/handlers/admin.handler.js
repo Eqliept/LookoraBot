@@ -1,4 +1,3 @@
-import { Bot } from "grammy";
 import { ADMIN_ID } from "../constants/index.js";
 import { findUser, addCoinsToUser } from "../services/user.service.js";
 const awaitingGiveCoins = new Map();

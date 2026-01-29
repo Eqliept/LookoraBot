@@ -1,8 +1,8 @@
 import { InputFile, InlineKeyboard } from "grammy";
-import { getServicesKeyboard, getBackKeyboard, getMainMenuKeyboard } from "../keyboards/index.js";
+import { getServicesKeyboard, getBackKeyboard } from "../keyboards/index.js";
 import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.js";
 import { validatePhoto, analyzeAppearance, getImprovementTips, analysisResults, getTelegramFileUrl } from "../services/gpt.service.js";
-import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE, MAIN_IMAGE } from "../constants/index.js";
+import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE } from "../constants/index.js";
 import { getAppearanceUI } from "../translations/appearance.translations.js";
 import "dotenv/config";
 import * as process from "node:process";

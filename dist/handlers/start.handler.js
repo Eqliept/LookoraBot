@@ -1,4 +1,4 @@
-import { Bot, InputFile } from "grammy";
+import { InputFile } from "grammy";
 import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang } from "../keyboards/index.js";
 import { userExists, createUser, updateUserLanguage, findUser } from "../services/user.service.js";
 import { MAIN_IMAGE, HELP_IMAGE } from "../constants/index.js";

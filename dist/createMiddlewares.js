@@ -1,11 +1,11 @@
 import { I18n } from "@grammyjs/i18n";
 import { autoLanguageMiddleware, authMiddleware } from "./middleware/autoLanguage.middleware.js";
-import en from "./languages/en.json" ;
-import es from "./languages/es.json" ;
-import fr from "./languages/fr.json" ;
-import pt from "./languages/pt.json" ;
-import ru from "./languages/ru.json" ;
-import ua from "./languages/ua.json" ;
+import en from "./languages/en.json" with { type: "json" };
+import es from "./languages/es.json" with { type: "json" };
+import fr from "./languages/fr.json" with { type: "json" };
+import pt from "./languages/pt.json" with { type: "json" };
+import ru from "./languages/ru.json" with { type: "json" };
+import ua from "./languages/ua.json" with { type: "json" };
 function jsonToFluent(obj) {
     return Object.entries(obj)
         .map(([key, value]) => {
