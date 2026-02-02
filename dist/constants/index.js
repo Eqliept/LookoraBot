@@ -4,6 +4,10 @@ export const APPEARANCE_COST = 50;
 export const TIPS_COST = 25;
 export const STYLE_COST = 100;
 export const ADMIN_ID = 1529335902;
+// Канал для получения бонуса
+export const CHANNEL_ID = -1003725350365;
+export const CHANNEL_URL = "https://t.me/lookorab";
+export const CHANNEL_BONUS = 50;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const IMAGES_DIR = join(__dirname, "..", "images");

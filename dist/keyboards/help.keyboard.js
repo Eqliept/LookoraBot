@@ -39,6 +39,8 @@ export const getHelpMenuKeyboard = (ctx) => {
         .row()
         .text(padText(ctx.t("help-style-info")), "help_style")
         .row()
+        .text(padText(ctx.t("help-hair-info")), "help_hair")
+        .row()
         .text(padText(ctx.t("help-coins-info")), "help_coins")
         .row()
         .text(padText(ctx.t("help-agreement")), "help_agreement")

@@ -1,8 +1,9 @@
 import { InputFile, InlineKeyboard } from "grammy";
 import { getServicesKeyboard, getBackKeyboard } from "../keyboards/index.js";
+import { logAnalysis, notifyAdminAboutError } from "../utils/logger.js";
 import { findUser, deductCoins, incrementPreCheckFails, resetPreCheckFails, PRECHECK_PENALTY, PRECHECK_FREE_ATTEMPTS } from "../services/user.service.js";
 import { validatePhoto, analyzeAppearance, getImprovementTips, analysisResults, getTelegramFileUrl } from "../services/gpt.service.js";
-import { APPEARANCE_COST, TIPS_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE } from "../constants/index.js";
+import { APPEARANCE_COST, FRONT_PHOTO_EXAMPLE, SIDE_PHOTO_EXAMPLE } from "../constants/index.js";
 import { getAppearanceUI } from "../translations/appearance.translations.js";
 import "dotenv/config";
 import * as process from "node:process";
@@ -94,23 +95,25 @@ export const appearanceHandler = (bot) => {
             await deductCoins(ctx.from.id, APPEARANCE_COST);
             const updatedUser = await findUser(ctx.from.id);
             const analyzingMsg = await ctx.reply(ctx.t("analyzing"));
-            const result = await analyzeAppearance(session.frontPhotoUrl, photoUrl, user.language);
-            analysisResults.set(ctx.from.id, result);
-            await ctx.api.deleteMessage(ctx.chat.id, analyzingMsg.message_id);
-            const s = result.scores;
-            const ui = getAppearanceUI(updatedUser?.language || "EN");
-            const getCoeffText = (coeff) => {
-                if (coeff >= 0.95)
-                    return `🌟 ${ui.excellent}`;
-                if (coeff >= 0.85)
-                    return `✨ ${ui.good}`;
-                if (coeff >= 0.75)
-                    return `👍 ${ui.normal}`;
-                if (coeff >= 0.65)
-                    return `😐 ${ui.average}`;
-                return `⚠️ ${ui.low}`;
-            };
-            const resultMessage = `✨ ${ctx.t("appearance-result-title")}
+            try {
+                const result = await analyzeAppearance(session.frontPhotoUrl, photoUrl, user.language);
+                analysisResults.set(ctx.from.id, result);
+                await logAnalysis(ctx.from.id, 'appearance', APPEARANCE_COST, true);
+                await ctx.api.deleteMessage(ctx.chat.id, analyzingMsg.message_id);
+                const s = result.scores;
+                const ui = getAppearanceUI(updatedUser?.language || "EN");
+                const getCoeffText = (coeff) => {
+                    if (coeff >= 0.95)
+                        return `🌟 ${ui.excellent}`;
+                    if (coeff >= 0.85)
+                        return `✨ ${ui.good}`;
+                    if (coeff >= 0.75)
+                        return `👍 ${ui.normal}`;
+                    if (coeff >= 0.65)
+                        return `😐 ${ui.average}`;
+                    return `⚠️ ${ui.low}`;
+                };
+                const resultMessage = `✨ ${ctx.t("appearance-result-title")}
 
 🎯 ${ui.totalScore}: ${result.totalScore}/100
 ${getCoeffText(result.overallCoefficient)} ${ui.impression} (×${result.overallCoefficient.toFixed(2)})
@@ -138,16 +141,23 @@ ${getProgressBar(s.cheekbones)}
 ${ui.symmetry}: ${s.symmetry}/100
 ${getProgressBar(s.symmetry)}
 
-${ui.harmony}: ${s.harmony}/100
-${getProgressBar(s.harmony)}
+${ui.eyebrows}: ${s.eyebrows}/100
+${getProgressBar(s.eyebrows)}
 
 💎 ${ui.charged}: ${APPEARANCE_COST} coins
 💎 ${ui.remaining}: ${updatedUser?.coins ?? 0} coins`;
-            const keyboard = new InlineKeyboard()
-                .text(`💡 ${ui.tipsButton} (${TIPS_COST})`, "get_improvement_tips")
-                .row()
-                .text(`⬅️ ${ui.backButton}`, "back_menu");
-            await ctx.reply(resultMessage, { reply_markup: keyboard });
+                const keyboard = new InlineKeyboard()
+                    .text(`💡 ${ui.tipsButton}`, "get_improvement_tips")
+                    .row()
+                    .text(`⬅️ ${ui.backButton}`, "back_menu");
+                await ctx.reply(resultMessage, { reply_markup: keyboard });
+            }
+            catch (error) {
+                await notifyAdminAboutError(error, 'appearance analysis', ctx.from.id);
+                await ctx.api.deleteMessage(ctx.chat.id, analyzingMsg.message_id).catch(() => { });
+                await ctx.reply(ctx.t("maintenance-mode"));
+                return;
+            }
         }
     });
     bot.callbackQuery("get_improvement_tips", async (ctx) => {
@@ -162,16 +172,6 @@ ${getProgressBar(s.harmony)}
             await ctx.answerCallbackQuery({ text: ui.noAnalysisYet, show_alert: true });
             return;
         }
-        if (user.coins < TIPS_COST) {
-            const ui = getAppearanceUI(user.language);
-            await ctx.answerCallbackQuery({
-                text: `${ui.notEnoughCoins} ${TIPS_COST}, ${ui.youHave} ${user.coins}`,
-                show_alert: true
-            });
-            return;
-        }
-        await deductCoins(ctx.from.id, TIPS_COST);
-        const updatedUser = await findUser(ctx.from.id);
         await ctx.answerCallbackQuery();
         const ui = getAppearanceUI(user.language);
         const loadingMsg = await ctx.reply(ui.generatingTips);
@@ -179,11 +179,9 @@ ${getProgressBar(s.harmony)}
         await ctx.api.deleteMessage(ctx.chat.id, loadingMsg.message_id);
         const tipsMessage = `${ui.tipsTitle}
 
-${tips}
-
-💎 ${ui.charged} ${TIPS_COST} ${ui.lookCoins}
-💎 ${ui.remaining} ${updatedUser?.coins ?? 0} ${ui.lookCoins}`;
+${tips}`;
         await ctx.reply(tipsMessage, {
+            parse_mode: "Markdown",
             reply_markup: new InlineKeyboard().text(ui.backToMenu, "back_menu")
         });
     });

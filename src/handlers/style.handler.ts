@@ -231,8 +231,8 @@ ${getProgressBar(s.styleConsistency)}
 ${ui.accessories}: ${s.accessories}/100
 ${getProgressBar(s.accessories)}
 
-${ui.seasonality}: ${s.seasonality}/100
-${getProgressBar(s.seasonality)}
+${ui.grooming}: ${s.grooming}/100
+${getProgressBar(s.grooming)}
 
 ${ui.contextMatch}: ${s.contextMatch}/100
 ${getProgressBar(s.contextMatch)}

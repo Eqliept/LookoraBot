@@ -18,7 +18,7 @@ export interface StyleScores {
     fit: number;
     styleConsistency: number;
     accessories: number;
-    seasonality: number;
+    grooming: number;
     contextMatch: number;
 }
 export interface StyleAnalysisResult {
@@ -41,7 +41,7 @@ export interface AppearanceScores {
     jawline: number;
     cheekbones: number;
     symmetry: number;
-    harmony: number;
+    eyebrows: number;
 }
 export interface AppearanceAnalysisResult {
     scores: AppearanceScores;
@@ -65,7 +65,7 @@ export interface AppearanceUITranslations {
     jawline: string;
     cheekbones: string;
     symmetry: string;
-    harmony: string;
+    eyebrows: string;
     charged: string;
     remaining: string;
     tipsButton: string;
@@ -86,10 +86,51 @@ export interface GPTTranslationLabels {
     jawline: string;
     cheekbones: string;
     symmetry: string;
-    harmony: string;
+    eyebrows: string;
 }
 export interface GPTTranslation {
     errorLanguage: string;
     labels: GPTTranslationLabels;
+}
+export interface HairScores {
+    health: number;
+    volume: number;
+    texture: number;
+    color: number;
+    styling: number;
+    maintenance: number;
+}
+export interface HairAnalysisResult {
+    scores: HairScores;
+    totalScore: number;
+    faceShape: string;
+    currentStyle: string;
+    strengths: string[];
+    improvements: string[];
+}
+export interface HairUITranslations {
+    totalScore: string;
+    faceShape: string;
+    currentStyle: string;
+    details: string;
+    health: string;
+    volume: string;
+    texture: string;
+    color: string;
+    styling: string;
+    maintenance: string;
+    strengths: string;
+    improvements: string;
+    suggestHairstyleButton: string;
+    improveCurrentButton: string;
+    backButton: string;
+    barberInstructionsButton: string;
+    generatingSuggestion: string;
+    generatingImprovement: string;
+    generatingBarberText: string;
+    hairstyleSuggestionTitle: string;
+    improvementTitle: string;
+    barberInstructionsTitle: string;
+    backToHairMenu: string;
 }
 //# sourceMappingURL=index.d.ts.map

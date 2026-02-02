@@ -5,6 +5,8 @@ import { findUser, addCoinsToUser } from "../services/user.service.js";
 import { createCryptoBotInvoice, checkInvoiceStatus } from "../services/cryptobot.service.js";
 import { ADMIN_ID, WALLET_IMAGE, MAIN_IMAGE } from "../constants/index.js";
 import { getWelcomeBackMessage } from "./start.handler.js";
+import { notifyAdminAboutPurchase } from "./admin.handler.js";
+import { logPurchase } from "../utils/logger.js";
 const awaitingCustomAmount = new Set();
 const pendingPayments = new Map();
 const giftStates = new Map();
@@ -428,6 +430,12 @@ export const walletHandler = (bot) => {
         if (status === "paid") {
             const user = await addCoinsToUser(userId, pending.total);
             pendingPayments.delete(userId);
+            // Логируем покупку
+            logPurchase(userId, pending.total, (pending.amount / 100), // Цена в USD
+            "CryptoBot");
+            // Уведомляем админа о покупке
+            await notifyAdminAboutPurchase(ctx.api, userId, pending.total, (pending.amount / 100), // Цена в USD
+            "CryptoBot");
             await ctx.reply(ctx.t("topup-success", { total: pending.total, balance: user?.coins ?? 0 }));
             await ctx.answerCallbackQuery({ text: ctx.t("payment-success") });
         }
@@ -487,6 +495,11 @@ export const walletHandler = (bot) => {
         else {
             const user = await addCoinsToUser(payload.userId, payload.total);
             if (user) {
+                // Логируем покупку
+                logPurchase(payload.userId, payload.total, payload.amount / 100, // Цена в USD
+                "Telegram Stars");
+                // Уведомляем админа о покупке
+                await notifyAdminAboutPurchase(ctx.api, payload.userId, payload.total, payload.price, "Telegram Stars");
                 await ctx.reply(ctx.t("topup-success", { total: payload.total, balance: user.coins }));
             }
         }

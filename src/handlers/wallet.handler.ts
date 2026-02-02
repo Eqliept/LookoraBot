@@ -6,6 +6,8 @@ import { findUser, addCoinsToUser } from "../services/user.service.js";
 import { createCryptoBotInvoice, checkInvoiceStatus } from "../services/cryptobot.service.js";
 import { ADMIN_ID, WALLET_IMAGE, MAIN_IMAGE } from "../constants/index.js";
 import { getWelcomeBackMessage } from "./start.handler.js";
+import { notifyAdminAboutPurchase } from "./admin.handler.js";
+import { logPurchase } from "../utils/logger.js";
 import type { Language } from "../types/index.js";
 
 const awaitingCustomAmount = new Set<number>();
@@ -532,6 +534,23 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             const user = await addCoinsToUser(userId, pending.total);
             pendingPayments.delete(userId);
 
+            // Логируем покупку
+            logPurchase(
+                userId,
+                pending.total,
+                (pending.amount / 100),  // Цена в USD
+                "CryptoBot"
+            );
+
+            // Уведомляем админа о покупке
+            await notifyAdminAboutPurchase(
+                ctx.api as any,
+                userId,
+                pending.total,
+                (pending.amount / 100),  // Цена в USD
+                "CryptoBot"
+            );
+
             await ctx.reply(
                 ctx.t("topup-success", { total: pending.total, balance: user?.coins ?? 0 })
             );
@@ -605,6 +624,23 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         } else {
             const user = await addCoinsToUser(payload.userId, payload.total);
             if (user) {
+                // Логируем покупку
+                logPurchase(
+                    payload.userId,
+                    payload.total,
+                    payload.amount / 100,  // Цена в USD
+                    "Telegram Stars"
+                );
+
+                // Уведомляем админа о покупке
+                await notifyAdminAboutPurchase(
+                    ctx.api as any,
+                    payload.userId,
+                    payload.total,
+                    payload.price,
+                    "Telegram Stars"
+                );
+                
                 await ctx.reply(
                     ctx.t("topup-success", { total: payload.total, balance: user.coins })
                 );

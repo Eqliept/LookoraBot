@@ -5,8 +5,12 @@ import { createGuards } from "./createGuards.js";
 import { createMiddlewares } from "./createMiddlewares.js";
 import { setupBotCommands } from "./setupBotMenu.js";
 import type { MyContext } from "./middleware/autoLanguage.middleware.js";
+import { setBotInstance, logger } from "./utils/logger.js";
 
 const bot = new Bot<MyContext>(process.env.BOT_TOKEN!);
+
+// Устанавливаем инстанс бота для уведомлений админа
+setBotInstance(bot);
 
 createMiddlewares(bot);
 createGuards(bot);
@@ -15,5 +19,6 @@ createHandlers(bot);
 // Настраиваем меню команд и запускаем бота
 setupBotCommands(bot).then(() => {
     bot.start();
+    logger.info("🤖 Bot started successfully!");
     console.log("🤖 Bot started!");
 });

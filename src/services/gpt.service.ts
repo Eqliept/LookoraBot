@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult, StyleCategory, StyleScores, StyleAnalysisResult } from "../types/index.js";
+import type { Language, PhotoValidationResult, AppearanceScores, AppearanceAnalysisResult, StyleCategory, StyleScores, StyleAnalysisResult, HairScores, HairAnalysisResult } from "../types/index.js";
 import { getGPTTranslation } from "../translations/gpt.translations.js";
 
 const OPENAI_API_KEY = process.env.OPEN_API!;
@@ -194,7 +194,7 @@ Answer ONLY in JSON format:
                 jawline: clampAndApply(raw.jawline),
                 cheekbones: clampAndApply(raw.cheekbones),
                 symmetry: clampAndApply(raw.symmetry),
-                harmony: clampAndApply(raw.harmony)
+                eyebrows: clampAndApply(raw.eyebrows)
             };
             
             // Вычисляем общую оценку как среднее
@@ -222,7 +222,7 @@ Answer ONLY in JSON format:
 const getDefaultResult = (): AppearanceAnalysisResult => ({
     scores: {
         eyes: 50, nose: 50, lips: 50, skin: 50,
-        jawline: 50, cheekbones: 50, symmetry: 50, harmony: 50
+        jawline: 50, cheekbones: 50, symmetry: 50, eyebrows: 50
     },
     totalScore: 50,
     overallCoefficient: 1.0,
@@ -472,7 +472,7 @@ Rate EACH parameter on a scale from 30 to 100:
 2. fit - Fit (how well clothes fit the body)
 3. styleConsistency - Style consistency (unified look)
 4. accessories - Accessories (appropriate and matching)
-5. seasonality - Seasonality (appropriate for weather/season visible)
+5. grooming - Grooming and neatness (clean, ironed, well-maintained clothes and appearance)
 6. contextMatch - Context match (how appropriate for: ${contextDescription})
 
 ALSO rate "contextCoefficient" - how well this outfit matches the specific context (from 0.3 to 1.0):
@@ -497,7 +497,7 @@ Answer ONLY in JSON format:
     "fit": number 30-100,
     "styleConsistency": number 30-100,
     "accessories": number 30-100,
-    "seasonality": number 30-100,
+    "grooming": number 30-100,
     "contextMatch": number 30-100,
     "contextCoefficient": number 0.3-1.0,
     "strengths": ["string", "string"],
@@ -549,7 +549,7 @@ Answer ONLY in JSON format:
                 fit: clamp(raw.fit),
                 styleConsistency: clamp(raw.styleConsistency),
                 accessories: clamp(raw.accessories),
-                seasonality: clamp(raw.seasonality),
+                grooming: clamp(raw.grooming),
                 contextMatch: clamp(raw.contextMatch)
             };
             
@@ -592,7 +592,7 @@ const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
             fit: 50,
             styleConsistency: 50,
             accessories: 50,
-            seasonality: 50,
+            grooming: 50,
             contextMatch: 50
         },
         totalScore: 50,
@@ -601,4 +601,290 @@ const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
         improvements: [msg?.improvement ?? ""],
         recommendations: [msg?.recommendation ?? ""]
     };
+};
+
+/**
+ * Анализ волос и определение формы лица
+ */
+export const analyzeHair = async (
+    photoUrl: string,
+    lang: Language = "EN"
+): Promise<HairAnalysisResult> => {
+    const prompt = `Analyze the hair and face shape in this photo. Rate on a scale of 0-100.
+
+Evaluate:
+1. health - Hair health (shine, no damage, no split ends)
+2. volume - Volume and fullness
+3. texture - Texture and structure (smooth, well-maintained)
+4. color - Color quality (natural or well-colored)
+5. styling - Styling quality (neat, well-done)
+6. maintenance - Overall grooming (clean, well-kept)
+
+Also determine:
+- faceShape - Face shape (oval, round, square, heart, etc.)
+- currentStyle - Brief description of current hairstyle
+- strengths - 2-3 strong points
+- improvements - 2-3 things that can be improved
+
+Respond ONLY with JSON:
+{
+  "scores": {
+    "health": 0-100,
+    "volume": 0-100,
+    "texture": 0-100,
+    "color": 0-100,
+    "styling": 0-100,
+    "maintenance": 0-100
+  },
+  "faceShape": "shape description",
+  "currentStyle": "hairstyle description",
+  "strengths": ["strength 1", "strength 2"],
+  "improvements": ["improvement 1", "improvement 2"]
+}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: photoUrl } }
+                        ]
+                    }
+                ],
+                max_tokens: 800
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content?.trim();
+
+        if (!content) {
+            throw new Error("Empty response from OpenAI");
+        }
+
+        const parsed = JSON.parse(content);
+        const scores: HairScores = parsed.scores;
+        
+        // Вычисляем общую оценку
+        const totalScore = Math.round(
+            (scores.health + scores.volume + scores.texture + 
+             scores.color + scores.styling + scores.maintenance) / 6
+        );
+
+        return {
+            scores,
+            totalScore,
+            faceShape: parsed.faceShape,
+            currentStyle: parsed.currentStyle,
+            strengths: parsed.strengths || [],
+            improvements: parsed.improvements || []
+        };
+    } catch (error) {
+        console.error("Hair analysis error:", error);
+        
+        return {
+            scores: {
+                health: 50,
+                volume: 50,
+                texture: 50,
+                color: 50,
+                styling: 50,
+                maintenance: 50
+            },
+            totalScore: 50,
+            faceShape: "Not determined",
+            currentStyle: "Analysis unavailable",
+            strengths: ["Try another photo"],
+            improvements: ["Upload a clear photo"]
+        };
+    }
+};
+
+/**
+ * Подбор прически на основе анализа
+ */
+export const suggestHairstyle = async (
+    photoUrl: string,
+    hairAnalysis: HairAnalysisResult,
+    lang: Language = "EN"
+): Promise<string> => {
+    const prompt = `Based on this person's photo and hair analysis, suggest the BEST hairstyle.
+
+Face shape: ${hairAnalysis.faceShape}
+Current style: ${hairAnalysis.currentStyle}
+Hair health: ${hairAnalysis.scores.health}/100
+Hair texture: ${hairAnalysis.scores.texture}/100
+
+Provide:
+1. Recommended hairstyle name
+2. Brief explanation why this suits them (2-3 sentences)
+3. 3-5 example search terms to find this hairstyle online (e.g., "Brad Pitt undercut 2023", "short pompadour men")
+
+Format:
+**Hairstyle Name**
+
+Why it suits you:
+[explanation]
+
+Examples to search:
+• [example 1]
+• [example 2]
+• [example 3]
+
+Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : lang === "ES" ? "Spanish" : lang === "PT" ? "Portuguese" : lang === "FR" ? "French" : "English"}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: photoUrl } }
+                        ]
+                    }
+                ],
+                max_tokens: 500
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content?.trim() || "Unable to generate suggestion";
+    } catch (error) {
+        console.error("Hairstyle suggestion error:", error);
+        return "Unable to generate suggestion. Please try again.";
+    }
+};
+
+/**
+ * Советы по улучшению текущей прически
+ */
+export const improveCurrentHair = async (
+    photoUrl: string,
+    hairAnalysis: HairAnalysisResult,
+    lang: Language = "EN"
+): Promise<string> => {
+    const prompt = `Based on this person's current hairstyle, provide improvement suggestions.
+
+Current style: ${hairAnalysis.currentStyle}
+Areas to improve: ${hairAnalysis.improvements.join(", ")}
+
+Suggest:
+- Hair treatments (keratin, biowave, etc.)
+- Styling changes (curls, waves, straightening)
+- Coloring options (highlights, balayage, etc.)
+- Maintenance tips
+
+Keep it concise and practical (4-6 suggestions max).
+
+Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : lang === "ES" ? "Spanish" : lang === "PT" ? "Portuguese" : lang === "FR" ? "French" : "English"}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: photoUrl } }
+                        ]
+                    }
+                ],
+                max_tokens: 400
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content?.trim() || "Unable to generate improvements";
+    } catch (error) {
+        console.error("Hair improvement error:", error);
+        return "Unable to generate improvements. Please try again.";
+    }
+};
+
+/**
+ * Генерация инструкций для барбера
+ */
+export const generateBarberInstructions = async (
+    hairstyleSuggestion: string,
+    lang: Language = "EN"
+): Promise<string> => {
+    const prompt = `Convert this hairstyle recommendation into clear, professional barber instructions.
+
+Recommended hairstyle:
+${hairstyleSuggestion}
+
+Provide:
+- Cut specifications (length, technique)
+- Styling instructions
+- Maintenance advice
+
+Keep it brief and technical (barber language).
+
+Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : lang === "ES" ? "Spanish" : lang === "PT" ? "Portuguese" : lang === "FR" ? "French" : "English"}`;
+
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 300
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content?.trim() || "Unable to generate barber instructions";
+    } catch (error) {
+        console.error("Barber instructions error:", error);
+        return "Unable to generate barber instructions. Please try again.";
+    }
 };

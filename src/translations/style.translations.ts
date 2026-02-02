@@ -30,7 +30,7 @@ export interface StyleUITranslations {
     fit: string;
     styleConsistency: string;
     accessories: string;
-    seasonality: string;
+    grooming: string;
     contextMatch: string;
     strengths: string;
     improvements: string;
@@ -71,7 +71,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Посадка одежды",
         styleConsistency: "🎯 Единство стиля",
         accessories: "💎 Аксессуары",
-        seasonality: "🌡️ Сезонность",
+        grooming: "✨ Ухоженность",
         contextMatch: "🎭 Соответствие контексту",
         strengths: "💪 Сильные стороны",
         improvements: "🔧 Что улучшить",
@@ -110,7 +110,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Fit",
         styleConsistency: "🎯 Style consistency",
         accessories: "💎 Accessories",
-        seasonality: "🌡️ Seasonality",
+        grooming: "✨ Grooming",
         contextMatch: "🎭 Context match",
         strengths: "💪 Strengths",
         improvements: "🔧 What to improve",
@@ -149,7 +149,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Ajuste",
         styleConsistency: "🎯 Consistencia de estilo",
         accessories: "💎 Accesorios",
-        seasonality: "🌡️ Estacionalidad",
+        grooming: "✨ Arreglo personal",
         contextMatch: "🎭 Adecuación al contexto",
         strengths: "💪 Fortalezas",
         improvements: "🔧 Qué mejorar",
@@ -188,7 +188,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Coupe",
         styleConsistency: "🎯 Cohérence du style",
         accessories: "💎 Accessoires",
-        seasonality: "🌡️ Saisonnalité",
+        grooming: "✨ Soigné",
         contextMatch: "🎭 Adéquation au contexte",
         strengths: "💪 Points forts",
         improvements: "🔧 À améliorer",
@@ -227,7 +227,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Caimento",
         styleConsistency: "🎯 Consistência do estilo",
         accessories: "💎 Acessórios",
-        seasonality: "🌡️ Sazonalidade",
+        grooming: "✨ Cuidado pessoal",
         contextMatch: "🎭 Adequação ao contexto",
         strengths: "💪 Pontos fortes",
         improvements: "🔧 O que melhorar",
@@ -266,7 +266,7 @@ export const styleUITranslations: Record<Language, StyleUITranslations> = {
         fit: "👔 Посадка одягу",
         styleConsistency: "🎯 Єдність стилю",
         accessories: "💎 Аксесуари",
-        seasonality: "🌡️ Сезонність",
+        grooming: "✨ Доглянутість",
         contextMatch: "🎭 Відповідність контексту",
         strengths: "💪 Сильні сторони",
         improvements: "🔧 Що покращити",

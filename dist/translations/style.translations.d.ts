@@ -29,7 +29,7 @@ export interface StyleUITranslations {
     fit: string;
     styleConsistency: string;
     accessories: string;
-    seasonality: string;
+    grooming: string;
     contextMatch: string;
     strengths: string;
     improvements: string;

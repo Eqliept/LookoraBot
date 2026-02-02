@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { Language, PhotoValidationResult, AppearanceAnalysisResult, StyleCategory, StyleAnalysisResult } from "../types/index.js";
+import type { Language, PhotoValidationResult, AppearanceAnalysisResult, StyleCategory, StyleAnalysisResult, HairAnalysisResult } from "../types/index.js";
 export declare const analysisResults: Map<number, AppearanceAnalysisResult>;
 /**
  * Проверка качества фото через GPT Vision
@@ -28,4 +28,20 @@ export declare const validateStylePhoto: (photoUrl: string, lang?: Language) => 
  * Анализ стиля через GPT Vision
  */
 export declare const analyzeStyle: (photoUrl: string, category: StyleCategory, customDescription: string | undefined, lang?: Language) => Promise<StyleAnalysisResult>;
+/**
+ * Анализ волос и определение формы лица
+ */
+export declare const analyzeHair: (photoUrl: string, lang?: Language) => Promise<HairAnalysisResult>;
+/**
+ * Подбор прически на основе анализа
+ */
+export declare const suggestHairstyle: (photoUrl: string, hairAnalysis: HairAnalysisResult, lang?: Language) => Promise<string>;
+/**
+ * Советы по улучшению текущей прически
+ */
+export declare const improveCurrentHair: (photoUrl: string, hairAnalysis: HairAnalysisResult, lang?: Language) => Promise<string>;
+/**
+ * Генерация инструкций для барбера
+ */
+export declare const generateBarberInstructions: (hairstyleSuggestion: string, lang?: Language) => Promise<string>;
 //# sourceMappingURL=gpt.service.d.ts.map

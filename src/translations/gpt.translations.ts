@@ -11,7 +11,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Челюсть",
             cheekbones: "Скулы",
             symmetry: "Симметрия",
-            harmony: "Гармония"
+            eyebrows: "Брови"
         }
     },
     EN: {
@@ -24,7 +24,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Jawline",
             cheekbones: "Cheekbones",
             symmetry: "Symmetry",
-            harmony: "Harmony"
+            eyebrows: "Eyebrows"
         }
     },
     ES: {
@@ -37,7 +37,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Mandíbula",
             cheekbones: "Pómulos",
             symmetry: "Simetría",
-            harmony: "Armonía"
+            eyebrows: "Cejas"
         }
     },
     FR: {
@@ -50,7 +50,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Mâchoire",
             cheekbones: "Pommettes",
             symmetry: "Symétrie",
-            harmony: "Harmonie"
+            eyebrows: "Sourcils"
         }
     },
     PT: {
@@ -63,7 +63,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Mandíbula",
             cheekbones: "Maçãs do rosto",
             symmetry: "Simetria",
-            harmony: "Harmonia"
+            eyebrows: "Sobrancelhas"
         }
     },
     UA: {
@@ -76,7 +76,7 @@ export const gptTranslations: Record<Language, GPTTranslation> = {
             jawline: "Щелепа",
             cheekbones: "Вилиці",
             symmetry: "Симетрія",
-            harmony: "Гармонія"
+            eyebrows: "Брови"
         }
     }
 };

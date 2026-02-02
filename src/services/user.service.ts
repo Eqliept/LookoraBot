@@ -7,6 +7,7 @@ export interface UserData {
     language: string | null;
     coins: number;
     preCheckFails: number;
+    channelBonusClaimed: boolean;
     createdAt: Date;
 }
 
@@ -28,7 +29,8 @@ export const createUser = async (telegramId: number, language: Language): Promis
         data: {
             telegramId: String(telegramId),
             language: language,
-            coins: 50
+            coins: 100,
+            channelBonusClaimed: true
         }
     });
 };
@@ -83,6 +85,36 @@ export const deductCoins = async (telegramId: number, amount: number): Promise<b
     }
 };
 
+export const removeCoinsFromUser = async (telegramId: number, amount: number): Promise<UserData | null> => {
+    try {
+        const user = await findUser(telegramId);
+        if (!user || user.coins < amount) return null;
+        
+        return await prisma.user.update({
+            where: { telegramId: String(telegramId) },
+            data: { coins: { decrement: amount } }
+        });
+    } catch {
+        return null;
+    }
+};
+
+export const claimChannelBonus = async (telegramId: number, bonusAmount: number): Promise<UserData | null> => {
+    try {
+        const user = await findUser(telegramId);
+        if (!user || user.channelBonusClaimed) return null;
+        
+        return await prisma.user.update({
+            where: { telegramId: String(telegramId) },
+            data: { 
+                coins: { increment: bonusAmount },
+                channelBonusClaimed: true 
+            }
+        });
+    } catch {
+        return null;
+    }
+};
 
 export const createPurchase = async (
     telegramId: number, 

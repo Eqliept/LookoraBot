@@ -29,7 +29,7 @@ export interface StyleScores {
     fit: number;               // Посадка одежды
     styleConsistency: number;  // Единство стиля
     accessories: number;       // Аксессуары
-    seasonality: number;       // Соответствие сезону
+    grooming: number;          // Ухоженность и опрятность
     contextMatch: number;      // Соответствие контексту
 }
 
@@ -57,7 +57,7 @@ export interface AppearanceScores {
     jawline: number;     // Челюсть/подбородок
     cheekbones: number;  // Скулы
     symmetry: number;    // Симметрия
-    harmony: number;     // Общая гармония
+    eyebrows: number;    // Брови
 }
 
 export interface AppearanceAnalysisResult {
@@ -83,7 +83,7 @@ export interface AppearanceUITranslations {
     jawline: string;
     cheekbones: string;
     symmetry: string;
-    harmony: string;
+    eyebrows: string;
     charged: string;
     remaining: string;
     tipsButton: string;
@@ -105,10 +105,55 @@ export interface GPTTranslationLabels {
     jawline: string;
     cheekbones: string;
     symmetry: string;
-    harmony: string;
+    eyebrows: string;
 }
 
 export interface GPTTranslation {
     errorLanguage: string;
     labels: GPTTranslationLabels;
+}
+
+// Результат анализа волос
+export interface HairScores {
+    health: number;        // Здоровье волос
+    volume: number;        // Объем
+    texture: number;       // Текстура/структура
+    color: number;         // Цвет (натуральность/качество окрашивания)
+    styling: number;       // Укладка
+    maintenance: number;   // Ухоженность
+}
+
+export interface HairAnalysisResult {
+    scores: HairScores;
+    totalScore: number;
+    faceShape: string;          // Форма лица
+    currentStyle: string;       // Описание текущей прически
+    strengths: string[];        // Сильные стороны
+    improvements: string[];     // Что можно улучшить
+}
+
+export interface HairUITranslations {
+    totalScore: string;
+    faceShape: string;
+    currentStyle: string;
+    details: string;
+    health: string;
+    volume: string;
+    texture: string;
+    color: string;
+    styling: string;
+    maintenance: string;
+    strengths: string;
+    improvements: string;
+    suggestHairstyleButton: string;
+    improveCurrentButton: string;
+    backButton: string;
+    barberInstructionsButton: string;
+    generatingSuggestion: string;
+    generatingImprovement: string;
+    generatingBarberText: string;
+    hairstyleSuggestionTitle: string;
+    improvementTitle: string;
+    barberInstructionsTitle: string;
+    backToHairMenu: string;
 }
