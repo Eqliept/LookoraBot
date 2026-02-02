@@ -15,8 +15,8 @@ export const createUser = async (telegramId, language) => {
         data: {
             telegramId: String(telegramId),
             language: language,
-            coins: 100,
-            channelBonusClaimed: true
+            coins: 0,
+            channelBonusClaimed: false
         }
     });
 };

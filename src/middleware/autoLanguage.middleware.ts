@@ -1,6 +1,9 @@
 import { Context } from "grammy";
 import { findUser } from "../services/user.service.js";
 import type { I18nFlavor } from "@grammyjs/i18n";
+import { getSubscriptionKeyboardByLang } from "../keyboards/index.js";
+import { t } from "../utils/i18n.js";
+import type { Language } from "../types/index.js";
 
 export type MyContext = Context & I18nFlavor;
 
@@ -16,7 +19,7 @@ export const autoLanguageMiddleware = async (ctx: MyContext, next: () => Promise
 
 /**
  * Middleware для проверки авторизации пользователя
- * Пропускает только /start, выбор языка и соглашение для неавторизованных
+ * Пропускает только /start, выбор языка, соглашение и подписку для неавторизованных
  */
 export const authMiddleware = async (ctx: MyContext, next: () => Promise<void>) => {
     // Пропускаем команду /start
@@ -34,10 +37,33 @@ export const authMiddleware = async (ctx: MyContext, next: () => Promise<void>) 
         return next();
     }
 
+    // Пропускаем callback проверки подписки при регистрации
+    if (ctx.callbackQuery?.data === "check_registration_subscription") {
+        return next();
+    }
+
     // Проверяем авторизацию
     if (ctx.from) {
         const user = await findUser(ctx.from.id);
         if (user) {
+            // Пользователь существует - проверяем подписку на канал
+            if (!user.channelBonusClaimed) {
+                // Не завершил регистрацию - показываем экран подписки
+                const lang = (user.language as Language) || "EN";
+                
+                if (ctx.callbackQuery) {
+                    await ctx.answerCallbackQuery({ 
+                        text: "⚠️ Сначала подпишитесь на канал!", 
+                        show_alert: true 
+                    });
+                }
+                
+                await ctx.reply(t('subscription-required', lang), {
+                    reply_markup: getSubscriptionKeyboardByLang(lang),
+                    parse_mode: "Markdown"
+                });
+                return;
+            }
             return next();
         }
     }

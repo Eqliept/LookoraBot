@@ -4,7 +4,7 @@ export type MyContext = Context & I18nFlavor;
 export declare const autoLanguageMiddleware: (ctx: MyContext, next: () => Promise<void>) => Promise<void>;
 /**
  * Middleware для проверки авторизации пользователя
- * Пропускает только /start, выбор языка и соглашение для неавторизованных
+ * Пропускает только /start, выбор языка, соглашение и подписку для неавторизованных
  */
 export declare const authMiddleware: (ctx: MyContext, next: () => Promise<void>) => Promise<void>;
 //# sourceMappingURL=autoLanguage.middleware.d.ts.map

@@ -9,5 +9,5 @@ export { getTopUpKeyboard, getBuyForKeyboard, getGiftPackageKeyboard, getGiftPay
 export { getPaymentMethodKeyboard } from "./payment.keyboard.js";
 export { getAdminTopUpKeyboard } from "./admin.keyboard.js";
 export { getStyleCategoryKeyboard } from "./style.keyboard.js";
-export { getAgreementKeyboard, getAgreementKeyboardByLang, getHelpMenuKeyboard } from "./help.keyboard.js";
+export { getAgreementKeyboard, getAgreementKeyboardByLang, getHelpMenuKeyboard, getSubscriptionKeyboardByLang } from "./help.keyboard.js";
 //# sourceMappingURL=index.js.map

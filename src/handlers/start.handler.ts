@@ -1,9 +1,9 @@
 import { Bot, InputFile } from "grammy";
 import type { Language } from "../states/user.state.js";
 import type { MyContext } from "../middleware/autoLanguage.middleware.js";
-import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang } from "../keyboards/index.js";
-import { userExists, createUser, updateUserLanguage, findUser } from "../services/user.service.js";
-import { MAIN_IMAGE, HELP_IMAGE } from "../constants/index.js";
+import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang, getSubscriptionKeyboardByLang } from "../keyboards/index.js";
+import { userExists, createUser, updateUserLanguage, findUser, claimChannelBonus } from "../services/user.service.js";
+import { MAIN_IMAGE, HELP_IMAGE, CHANNEL_ID, CHANNEL_BONUS } from "../constants/index.js";
 import { 
     getHowToUseText, 
     getAppearanceHelpText, 
@@ -17,7 +17,7 @@ import {
 } from "../translations/help.translations.js";
 import type { Language as TypedLanguage } from "../types/index.js";
 import { t } from "../utils/i18n.js";
-import { logger, logUserAction, logError } from "../utils/logger.js";
+import { logger, logUserAction, logError, logCoinsOperation } from "../utils/logger.js";
 
 // Хранилище для пользователей, ожидающих принятия соглашения
 const pendingAgreement = new Map<number, Language>();
@@ -52,11 +52,24 @@ export const startHandler = (bot: Bot<MyContext>) => {
             const userId = ctx.from!.id;
             logUserAction(userId, 'start_command');
 
-            if (await userExists(userId)) {
-                await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
-                    caption: await getWelcomeBackMessage(ctx),
-                    reply_markup: getMainMenuKeyboard(ctx)
-                });
+            const user = await findUser(userId);
+            
+            if (user) {
+                // Пользователь существует - проверяем подписку на канал
+                if (!user.channelBonusClaimed) {
+                    // Не завершил регистрацию - показываем экран подписки
+                    const lang = (user.language as TypedLanguage) || "EN";
+                    await ctx.reply(t('subscription-required', lang), {
+                        reply_markup: getSubscriptionKeyboardByLang(lang),
+                        parse_mode: "Markdown"
+                    });
+                } else {
+                    // Завершил регистрацию - показываем главное меню
+                    await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+                        caption: await getWelcomeBackMessage(ctx),
+                        reply_markup: getMainMenuKeyboard(ctx)
+                    });
+                }
             } else {
                 await ctx.reply(ctx.t("select-language"), {
                     reply_markup: getLanguageKeyboard()
@@ -157,7 +170,7 @@ export const startHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Создаём пользователя (теперь с 100 койнами и channelBonusClaimed: true)
+        // Создаём пользователя (с 0 койнами и channelBonusClaimed: false)
         await createUser(userId, language);
         pendingAgreement.delete(userId);
         
@@ -166,18 +179,75 @@ export const startHandler = (bot: Bot<MyContext>) => {
         // Показываем сообщение о принятии соглашения
         await ctx.editMessageText(getAgreementAcceptedText(language as TypedLanguage));
         
-        // Показываем информацию о регистрационном бонусе
-        await ctx.reply(getRegistrationBonusText(language as TypedLanguage), {
+        // Показываем экран обязательной подписки на канал
+        await ctx.reply(t('subscription-required', language as TypedLanguage), {
+            reply_markup: getSubscriptionKeyboardByLang(language as TypedLanguage),
             parse_mode: "Markdown"
         });
         
-        // Показываем главное меню
-        await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
-            caption: await getWelcomeMessage(ctx),
-            reply_markup: getMainMenuKeyboard(ctx)
-        });
-        
         await ctx.answerCallbackQuery();
+    });
+
+    // Проверить подписку при регистрации
+    bot.callbackQuery("check_registration_subscription", async (ctx) => {
+        await ctx.answerCallbackQuery();
+        
+        const user = await findUser(ctx.from!.id);
+        if (!user) {
+            await ctx.reply(ctx.t("not-registered"));
+            return;
+        }
+
+        // Если уже получил бонус - показываем меню
+        if (user.channelBonusClaimed) {
+            await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+                caption: await getWelcomeMessage(ctx),
+                reply_markup: getMainMenuKeyboard(ctx)
+            });
+            return;
+        }
+
+        try {
+            // Проверяем подписку на канал
+            const member = await ctx.api.getChatMember(CHANNEL_ID, ctx.from!.id);
+            const isSubscribed = ["member", "administrator", "creator"].includes(member.status);
+
+            if (!isSubscribed) {
+                const lang = (user.language as TypedLanguage) || "EN";
+                await ctx.reply(t('please-subscribe-first', lang), {
+                    reply_markup: getSubscriptionKeyboardByLang(lang),
+                    parse_mode: "Markdown"
+                });
+                return;
+            }
+
+            // Начисляем бонус
+            const updatedUser = await claimChannelBonus(ctx.from!.id, CHANNEL_BONUS);
+            
+            if (updatedUser) {
+                logCoinsOperation(
+                    ctx.from!.id,
+                    'add',
+                    CHANNEL_BONUS,
+                    'Registration bonus (channel subscription)',
+                    { channelId: CHANNEL_ID }
+                );
+
+                await ctx.reply(
+                    t('subscription-success', user.language as TypedLanguage, { balance: updatedUser.coins }),
+                    { parse_mode: "Markdown" }
+                );
+
+                // Показываем главное меню
+                await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
+                    caption: await getWelcomeMessage(ctx),
+                    reply_markup: getMainMenuKeyboard(ctx)
+                });
+            }
+        } catch (error) {
+            logError(error as Error, 'check_registration_subscription', { userId: ctx.from?.id });
+            await ctx.reply("❌ Не удалось проверить подписку. Убедитесь, что бот добавлен в канал как администратор.");
+        }
     });
 
     bot.callbackQuery("change_language", async (ctx) => {

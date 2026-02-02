@@ -1,5 +1,6 @@
 import { InlineKeyboard } from "grammy";
 import { padText } from "./utils.js";
+import { CHANNEL_URL } from "../constants/index.js";
 // Переводы кнопок для незарегистрированных пользователей
 const agreementButtonTexts = {
     RU: { accept: "✅ Принять и продолжить", read: "📜 Прочитать соглашение" },
@@ -8,6 +9,25 @@ const agreementButtonTexts = {
     ES: { accept: "✅ Aceptar y continuar", read: "📜 Leer acuerdo" },
     FR: { accept: "✅ Accepter et continuer", read: "📜 Lire l'accord" },
     PT: { accept: "✅ Aceitar e continuar", read: "📜 Ler acordo" }
+};
+// Переводы кнопок для обязательной подписки на канал
+const subscriptionButtonTexts = {
+    RU: { subscribe: "📢 Подписаться на канал", check: "✅ Я подписался" },
+    EN: { subscribe: "📢 Subscribe to channel", check: "✅ I subscribed" },
+    UA: { subscribe: "📢 Підписатися на канал", check: "✅ Я підписався" },
+    ES: { subscribe: "📢 Suscribirse al canal", check: "✅ Me suscribí" },
+    FR: { subscribe: "📢 S'abonner à la chaîne", check: "✅ Je me suis abonné" },
+    PT: { subscribe: "📢 Inscrever-se no canal", check: "✅ Me inscrevi" }
+};
+/**
+ * Клавиатура обязательной подписки на канал (для регистрации - без ctx.t)
+ */
+export const getSubscriptionKeyboardByLang = (lang) => {
+    const texts = subscriptionButtonTexts[lang] || subscriptionButtonTexts.EN;
+    return new InlineKeyboard()
+        .url(padText(texts.subscribe), CHANNEL_URL)
+        .row()
+        .text(padText(texts.check), "check_registration_subscription");
 };
 /**
  * Клавиатура принятия лицензионного соглашения (для авторизованных)
