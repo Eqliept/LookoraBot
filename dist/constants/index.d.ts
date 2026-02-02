@@ -1,6 +1,7 @@
 export declare const APPEARANCE_COST = 50;
 export declare const TIPS_COST = 25;
 export declare const STYLE_COST = 100;
+export declare const BATTLE_COST = 100;
 export declare const ADMIN_ID = 1529335902;
 export declare const CHANNEL_ID = -1003725350365;
 export declare const CHANNEL_URL = "https://t.me/lookorab";

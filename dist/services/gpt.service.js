@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { getGPTTranslation } from "../translations/gpt.translations.js";
+import { notifyAdminAboutError } from "../utils/logger.js";
 const OPENAI_API_KEY = process.env.OPEN_API;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 // Хранилище результатов для генерации советов
@@ -525,9 +526,10 @@ const getDefaultStyleResult = (lang) => {
  * Анализ волос и определение формы лица
  */
 export const analyzeHair = async (photoUrl, lang = "EN") => {
-    const prompt = `Analyze the hair and face shape in this photo. Rate on a scale of 0-100.
+    const t = getGPTTranslation(lang);
+    const prompt = `You are a professional hair analyst. Analyze the hair and face shape in this photo.
 
-Evaluate:
+Rate each parameter on a scale from 30 to 100:
 1. health - Hair health (shine, no damage, no split ends)
 2. volume - Volume and fullness
 3. texture - Texture and structure (smooth, well-maintained)
@@ -536,25 +538,29 @@ Evaluate:
 6. maintenance - Overall grooming (clean, well-kept)
 
 Also determine:
-- faceShape - Face shape (oval, round, square, heart, etc.)
-- currentStyle - Brief description of current hairstyle
-- strengths - 2-3 strong points
-- improvements - 2-3 things that can be improved
+- gender - Person's gender ("male" or "female")
+- faceShape - Face shape (oval, round, square, heart, diamond, oblong) - keep in English
+- currentStyle - Brief description of current hairstyle (${t.errorLanguage}) (e.g., "short buzz cut", "medium wavy hair", "long straight hair")
+- strengths - 2-3 strong points about the hair (${t.errorLanguage})
+- improvements - 2-3 things that can be improved (${t.errorLanguage})
 
-Respond ONLY with JSON:
+Be honest and objective. Return ONLY valid JSON, no additional text.
+
+JSON format:
 {
+  "gender": "male" or "female",
   "scores": {
-    "health": 0-100,
-    "volume": 0-100,
-    "texture": 0-100,
-    "color": 0-100,
-    "styling": 0-100,
-    "maintenance": 0-100
+    "health": 30-100,
+    "volume": 30-100,
+    "texture": 30-100,
+    "color": 30-100,
+    "styling": 30-100,
+    "maintenance": 30-100
   },
-  "faceShape": "shape description",
-  "currentStyle": "hairstyle description",
-  "strengths": ["strength 1", "strength 2"],
-  "improvements": ["improvement 1", "improvement 2"]
+  "faceShape": "shape in English",
+  "currentStyle": "style description ${t.errorLanguage}",
+  "strengths": ["point 1 ${t.errorLanguage}", "point 2 ${t.errorLanguage}"],
+  "improvements": ["point 1 ${t.errorLanguage}", "point 2 ${t.errorLanguage}"]
 }`;
     try {
         const response = await fetch(OPENAI_API_URL, {
@@ -564,8 +570,12 @@ Respond ONLY with JSON:
                 Authorization: `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o",
+                model: "gpt-4o-mini",
                 messages: [
+                    {
+                        role: "system",
+                        content: "You are a professional hair analyst. Always respond with valid JSON only, no additional text or explanations."
+                    },
                     {
                         role: "user",
                         content: [
@@ -574,7 +584,8 @@ Respond ONLY with JSON:
                         ]
                     }
                 ],
-                max_tokens: 800
+                max_tokens: 600,
+                temperature: 0.7
             })
         });
         if (!response.ok) {
@@ -585,22 +596,37 @@ Respond ONLY with JSON:
         if (!content) {
             throw new Error("Empty response from OpenAI");
         }
-        const parsed = JSON.parse(content);
-        const scores = parsed.scores;
+        // Извлекаем JSON из ответа (может содержать текст до/после JSON)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("No JSON found in response");
+        }
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Нормализуем оценки (30-100)
+        const clamp = (val) => Math.min(100, Math.max(30, Number(val) || 50));
+        const scores = {
+            health: clamp(parsed.scores?.health),
+            volume: clamp(parsed.scores?.volume),
+            texture: clamp(parsed.scores?.texture),
+            color: clamp(parsed.scores?.color),
+            styling: clamp(parsed.scores?.styling),
+            maintenance: clamp(parsed.scores?.maintenance)
+        };
         // Вычисляем общую оценку
         const totalScore = Math.round((scores.health + scores.volume + scores.texture +
             scores.color + scores.styling + scores.maintenance) / 6);
         return {
             scores,
             totalScore,
-            faceShape: parsed.faceShape,
-            currentStyle: parsed.currentStyle,
-            strengths: parsed.strengths || [],
-            improvements: parsed.improvements || []
+            faceShape: parsed.faceShape || "Not determined",
+            currentStyle: parsed.currentStyle || "Not determined",
+            strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+            improvements: Array.isArray(parsed.improvements) ? parsed.improvements : [],
+            gender: parsed.gender === "female" ? "female" : "male"
         };
     }
     catch (error) {
-        console.error("Hair analysis error:", error);
+        await notifyAdminAboutError(error, 'hair analysis', 0);
         return {
             scores: {
                 health: 50,
@@ -634,8 +660,9 @@ Provide:
 2. Brief explanation why this suits them (2-3 sentences)
 3. 3-5 example search terms to find this hairstyle online (e.g., "Brad Pitt undercut 2023", "short pompadour men")
 
-Format:
-**Hairstyle Name**
+Use plain text format WITHOUT markdown (no ** or *):
+
+Hairstyle Name
 
 Why it suits you:
 [explanation]
@@ -654,7 +681,7 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
                 Authorization: `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o",
+                model: "gpt-4o-mini",
                 messages: [
                     {
                         role: "user",
@@ -664,36 +691,43 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
                         ]
                     }
                 ],
-                max_tokens: 500
+                max_tokens: 500,
+                temperature: 0.7
             })
         });
         if (!response.ok) {
             throw new Error(`OpenAI API error: ${response.status}`);
         }
         const data = await response.json();
-        return data.choices[0]?.message?.content?.trim() || "Unable to generate suggestion";
+        const result = data.choices[0]?.message?.content?.trim() || "Unable to generate hairstyle suggestion";
+        // Убираем markdown если остался
+        return result.replace(/\*\*/g, '').replace(/\*/g, '');
     }
     catch (error) {
-        console.error("Hairstyle suggestion error:", error);
-        return "Unable to generate suggestion. Please try again.";
+        await notifyAdminAboutError(error, 'hairstyle suggestion', 0);
+        return "Unable to generate hairstyle suggestion. Please try again.";
     }
 };
 /**
  * Советы по улучшению текущей прически
  */
 export const improveCurrentHair = async (photoUrl, hairAnalysis, lang = "EN") => {
-    const prompt = `Based on this person's current hairstyle, provide improvement suggestions.
+    const prompt = `Based on this person's current hairstyle and hair analysis, provide improvement suggestions.
 
 Current style: ${hairAnalysis.currentStyle}
-Areas to improve: ${hairAnalysis.improvements.join(", ")}
+Hair health: ${hairAnalysis.scores.health}/100
+Hair volume: ${hairAnalysis.scores.volume}/100
+Hair texture: ${hairAnalysis.scores.texture}/100
 
-Suggest:
+Suggest practical improvements:
 - Hair treatments (keratin, biowave, etc.)
 - Styling changes (curls, waves, straightening)
 - Coloring options (highlights, balayage, etc.)
 - Maintenance tips
+- Product recommendations
 
 Keep it concise and practical (4-6 suggestions max).
+Use plain text format WITHOUT markdown (no ** or *).
 
 Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : lang === "ES" ? "Spanish" : lang === "PT" ? "Portuguese" : lang === "FR" ? "French" : "English"}`;
     try {
@@ -704,7 +738,7 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
                 Authorization: `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o",
+                model: "gpt-4o-mini",
                 messages: [
                     {
                         role: "user",
@@ -714,37 +748,76 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
                         ]
                     }
                 ],
-                max_tokens: 400
+                max_tokens: 400,
+                temperature: 0.7
             })
         });
         if (!response.ok) {
             throw new Error(`OpenAI API error: ${response.status}`);
         }
         const data = await response.json();
-        return data.choices[0]?.message?.content?.trim() || "Unable to generate improvements";
+        const result = data.choices[0]?.message?.content?.trim() || "Unable to generate improvement tips";
+        // Убираем markdown если остался
+        return result.replace(/\*\*/g, '').replace(/\*/g, '');
     }
     catch (error) {
-        console.error("Hair improvement error:", error);
-        return "Unable to generate improvements. Please try again.";
+        await notifyAdminAboutError(error, 'hair improvement tips', 0);
+        return "Unable to generate improvement tips. Please try again.";
     }
 };
 /**
  * Генерация инструкций для барбера
  */
-export const generateBarberInstructions = async (hairstyleSuggestion, lang = "EN") => {
-    const prompt = `Convert this hairstyle recommendation into clear, professional barber instructions.
+export const generateBarberInstructions = async (hairstyleSuggestion, lang = "EN", gender = "male") => {
+    const genderContext = {
+        male: {
+            RU: "Вы мужчина. Пишите от первого лица мужского рода.",
+            EN: "You are a man. Write in first person masculine.",
+            UA: "Ви чоловік. Пишіть від першої особи чоловічого роду.",
+            ES: "Eres hombre. Escribe en primera persona masculina.",
+            PT: "Você é homem. Escreva em primeira pessoa masculina.",
+            FR: "Vous êtes un homme. Écrivez à la première personne du masculin."
+        },
+        female: {
+            RU: "Вы девушка. Пишите от первого лица женского рода.",
+            EN: "You are a woman. Write in first person feminine.",
+            UA: "Ви дівчина. Пишіть від першої особи жіночого роду.",
+            ES: "Eres mujer. Escribe en primera persona femenina.",
+            PT: "Você é mulher. Escreva em primeira pessoa feminina.",
+            FR: "Vous êtes une femme. Écrivez à la première personne du féminin."
+        }
+    };
+    const startPhrases = {
+        male: {
+            RU: "Сделайте мне пожалуйста",
+            EN: "Please make me",
+            UA: "Зробіть мені будь ласка",
+            ES: "Por favor, hágame",
+            PT: "Por favor, faça-me",
+            FR: "Faites-moi s'il vous plaît"
+        },
+        female: {
+            RU: "Сделайте мне пожалуйста",
+            EN: "Please make me",
+            UA: "Зробіть мені будь ласка",
+            ES: "Por favor, hágame",
+            PT: "Por favor, faça-me",
+            FR: "Faites-moi s'il vous plaît"
+        }
+    };
+    const genderInfo = genderContext[gender][lang] || genderContext[gender].EN;
+    const startPhrase = startPhrases[gender][lang] || startPhrases[gender].EN;
+    const prompt = `${genderInfo}
 
-Recommended hairstyle:
+Преобразуйте эту рекомендацию в текст-запрос от лица клиента для барбера/парикмахера. 
+Начните с "${startPhrase}..." и опишите желаемую прическу простым языком. 
+Будьте конкретны но кратки. Напишите так, как будто вы лично просите барбера.
+
+Рекомендуемая прическа:
 ${hairstyleSuggestion}
 
-Provide:
-- Cut specifications (length, technique)
-- Styling instructions
-- Maintenance advice
-
-Keep it brief and technical (barber language).
-
-Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : lang === "ES" ? "Spanish" : lang === "PT" ? "Portuguese" : lang === "FR" ? "French" : "English"}`;
+Язык ответа: ${lang === "RU" ? "русский" : lang === "UA" ? "украинский" : lang === "ES" ? "испанский" : lang === "PT" ? "португальский" : lang === "FR" ? "французский" : "английский"}.
+Без форматирования markdown. Только простой текст.`;
     try {
         const response = await fetch(OPENAI_API_URL, {
             method: "POST",
@@ -760,18 +833,163 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
                         content: prompt
                     }
                 ],
-                max_tokens: 300
+                max_tokens: 300,
+                temperature: 0.7
             })
         });
         if (!response.ok) {
             throw new Error(`OpenAI API error: ${response.status}`);
         }
         const data = await response.json();
-        return data.choices[0]?.message?.content?.trim() || "Unable to generate barber instructions";
+        const result = data.choices[0]?.message?.content?.trim() || "Unable to generate barber instructions";
+        // Убираем markdown если остался
+        return result.replace(/\*\*/g, '').replace(/\*/g, '');
     }
     catch (error) {
-        console.error("Barber instructions error:", error);
+        await notifyAdminAboutError(error, 'barber instructions generation', 0);
         return "Unable to generate barber instructions. Please try again.";
     }
 };
+/**
+ * Анализ баттла внешности - сравнение двух человек
+ */
+export const analyzeBattle = async (player1FrontUrl, player1SideUrl, player2FrontUrl, player2SideUrl, lang = "EN") => {
+    const t = getGPTTranslation(lang);
+    const verdictLang = {
+        RU: "на русском языке",
+        EN: "in English",
+        ES: "en español",
+        FR: "en français",
+        PT: "em português",
+        UA: "українською мовою"
+    };
+    const prompt = `You are judging an APPEARANCE BATTLE between two people.
+
+Analyze photos of PERSON 1 (front and side) and PERSON 2 (front and side).
+
+For EACH person, rate these parameters (30-100):
+- eyes: Eyes (shape, size, expressiveness)
+- nose: Nose (shape, proportions)
+- lips: Lips (shape, fullness)
+- skin: Skin (clarity, tone)
+- jawline: Jaw and chin
+- cheekbones: Cheekbones
+- symmetry: Face symmetry
+- eyebrows: Eyebrows
+
+Also rate "overallImpression" for each (0.5-1.0):
+- 1.0 = well-groomed, pleasant
+- 0.9 = normal
+- 0.8 = slightly unkempt
+- 0.7 = noticeably unkempt
+- 0.5 = very unkempt
+
+Be FAIR and OBJECTIVE. This is entertainment only.
+
+Also provide a brief verdict (2-3 sentences ${verdictLang[lang]}) explaining who won and why, mentioning the key differences.
+
+Answer ONLY in JSON:
+{
+    "player1": {
+        "eyes": number,
+        "nose": number,
+        "lips": number,
+        "skin": number,
+        "jawline": number,
+        "cheekbones": number,
+        "symmetry": number,
+        "eyebrows": number,
+        "overallImpression": number
+    },
+    "player2": {
+        "eyes": number,
+        "nose": number,
+        "lips": number,
+        "skin": number,
+        "jawline": number,
+        "cheekbones": number,
+        "symmetry": number,
+        "eyebrows": number,
+        "overallImpression": number
+    },
+    "verdict": "string"
+}`;
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: player1FrontUrl } },
+                            { type: "image_url", image_url: { url: player1SideUrl } },
+                            { type: "image_url", image_url: { url: player2FrontUrl } },
+                            { type: "image_url", image_url: { url: player2SideUrl } }
+                        ]
+                    }
+                ],
+                max_tokens: 800
+            })
+        });
+        const data = await response.json();
+        if (data.error) {
+            return getDefaultBattleResult();
+        }
+        const content = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const raw = JSON.parse(jsonMatch[0]);
+            const processPlayer = (playerData) => {
+                const overallCoefficient = Math.min(1.0, Math.max(0.5, Number(playerData.overallImpression) || 1.0));
+                const clampAndApply = (val) => {
+                    const base = Math.min(100, Math.max(30, Number(val) || 50));
+                    return Math.max(30, Math.round(base * overallCoefficient));
+                };
+                const scores = {
+                    eyes: clampAndApply(playerData.eyes),
+                    nose: clampAndApply(playerData.nose),
+                    lips: clampAndApply(playerData.lips),
+                    skin: clampAndApply(playerData.skin),
+                    jawline: clampAndApply(playerData.jawline),
+                    cheekbones: clampAndApply(playerData.cheekbones),
+                    symmetry: clampAndApply(playerData.symmetry),
+                    eyebrows: clampAndApply(playerData.eyebrows)
+                };
+                const values = Object.values(scores);
+                const totalScore = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+                return { scores, totalScore, overallCoefficient };
+            };
+            return {
+                player1: processPlayer(raw.player1),
+                player2: processPlayer(raw.player2),
+                verdict: raw.verdict || ""
+            };
+        }
+        return getDefaultBattleResult();
+    }
+    catch (error) {
+        await notifyAdminAboutError(error, 'battle analysis', 0);
+        return getDefaultBattleResult();
+    }
+};
+const getDefaultBattleResult = () => ({
+    player1: {
+        scores: { eyes: 50, nose: 50, lips: 50, skin: 50, jawline: 50, cheekbones: 50, symmetry: 50, eyebrows: 50 },
+        totalScore: 50,
+        overallCoefficient: 1.0
+    },
+    player2: {
+        scores: { eyes: 50, nose: 50, lips: 50, skin: 50, jawline: 50, cheekbones: 50, symmetry: 50, eyebrows: 50 },
+        totalScore: 50,
+        overallCoefficient: 1.0
+    },
+    verdict: ""
+});
 //# sourceMappingURL=gpt.service.js.map

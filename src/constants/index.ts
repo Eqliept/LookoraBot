@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 export const APPEARANCE_COST = 50;
 export const TIPS_COST = 25;
 export const STYLE_COST = 100;
+export const BATTLE_COST = 100;
 
 export const ADMIN_ID = 1529335902;
 

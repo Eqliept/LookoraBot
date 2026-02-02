@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { Language, PhotoValidationResult, AppearanceAnalysisResult, StyleCategory, StyleAnalysisResult, HairAnalysisResult } from "../types/index.js";
+import type { Language, PhotoValidationResult, AppearanceAnalysisResult, StyleCategory, StyleAnalysisResult, HairAnalysisResult, BattleAnalysisResult } from "../types/index.js";
 export declare const analysisResults: Map<number, AppearanceAnalysisResult>;
 /**
  * Проверка качества фото через GPT Vision
@@ -31,7 +31,9 @@ export declare const analyzeStyle: (photoUrl: string, category: StyleCategory, c
 /**
  * Анализ волос и определение формы лица
  */
-export declare const analyzeHair: (photoUrl: string, lang?: Language) => Promise<HairAnalysisResult>;
+export declare const analyzeHair: (photoUrl: string, lang?: Language) => Promise<HairAnalysisResult & {
+    gender?: "male" | "female";
+}>;
 /**
  * Подбор прически на основе анализа
  */
@@ -43,5 +45,9 @@ export declare const improveCurrentHair: (photoUrl: string, hairAnalysis: HairAn
 /**
  * Генерация инструкций для барбера
  */
-export declare const generateBarberInstructions: (hairstyleSuggestion: string, lang?: Language) => Promise<string>;
+export declare const generateBarberInstructions: (hairstyleSuggestion: string, lang?: Language, gender?: "male" | "female") => Promise<string>;
+/**
+ * Анализ баттла внешности - сравнение двух человек
+ */
+export declare const analyzeBattle: (player1FrontUrl: string, player1SideUrl: string, player2FrontUrl: string, player2SideUrl: string, lang?: Language) => Promise<BattleAnalysisResult>;
 //# sourceMappingURL=gpt.service.d.ts.map

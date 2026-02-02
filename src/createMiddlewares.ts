@@ -12,8 +12,14 @@ import ua from "./languages/ua.json" with { type: "json" };
 function jsonToFluent(obj: Record<string, string>): string {
     return Object.entries(obj)
         .map(([key, value]) => {
-            // Заменяем \n на реальные переносы с отступом для Fluent
-            const formattedValue = value.replace(/\\n/g, "\n    ");
+            // В JSON после парсинга \n уже становится реальным переносом строки
+            // Для Fluent нужно добавить отступ для многострочных значений
+            const lines = value.split('\n');
+            if (lines.length === 1) {
+                return `${key} = ${value}`;
+            }
+            // Многострочное значение: первая строка после =, остальные с отступом
+            const formattedValue = lines.join('\n    ');
             return `${key} = ${formattedValue}`;
         })
         .join("\n");

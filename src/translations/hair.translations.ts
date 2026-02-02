@@ -3,8 +3,8 @@ import { Language, HairUITranslations } from "../types/index.js";
 const hairUITranslations: Record<Language, HairUITranslations> = {
     RU: {
         totalScore: "Общая оценка",
-        faceShape: "Форма лица",
-        currentStyle: "Текущая прическа",
+        faceShape: "👤 Форма лица",
+        currentStyle: "💇 Текущая прическа",
         details: "Детальные оценки",
         health: "💊 Здоровье волос",
         volume: "🎈 Объем",
@@ -24,12 +24,12 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Рекомендуемая прическа",
         improvementTitle: "✨ Как улучшить вашу прическу",
         barberInstructionsTitle: "✂️ Инструкции для барбера",
-        backToHairMenu: "⬅️ К результатам"
+        backToHairMenu: "⬅️ В меню"
     },
     EN: {
         totalScore: "Total Score",
-        faceShape: "Face Shape",
-        currentStyle: "Current Hairstyle",
+        faceShape: "👤 Face Shape",
+        currentStyle: "💇 Current Hairstyle",
         details: "Detailed Scores",
         health: "💊 Hair Health",
         volume: "🎈 Volume",
@@ -49,12 +49,12 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Recommended Hairstyle",
         improvementTitle: "✨ How to Improve Your Hair",
         barberInstructionsTitle: "✂️ Barber Instructions",
-        backToHairMenu: "⬅️ Back to Results"
+        backToHairMenu: "⬅️ Menu"
     },
     ES: {
         totalScore: "Puntuación Total",
-        faceShape: "Forma del Rostro",
-        currentStyle: "Peinado Actual",
+        faceShape: "👤 Forma del Rostro",
+        currentStyle: "💇 Peinado Actual",
         details: "Puntuaciones Detalladas",
         health: "💊 Salud del Cabello",
         volume: "🎈 Volumen",
@@ -74,12 +74,12 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Peinado Recomendado",
         improvementTitle: "✨ Cómo Mejorar tu Cabello",
         barberInstructionsTitle: "✂️ Instrucciones para Barbero",
-        backToHairMenu: "⬅️ Volver a Resultados"
+        backToHairMenu: "⬅️ Menú"
     },
     PT: {
         totalScore: "Pontuação Total",
-        faceShape: "Formato do Rosto",
-        currentStyle: "Penteado Atual",
+        faceShape: "👤 Formato do Rosto",
+        currentStyle: "💇 Penteado Atual",
         details: "Pontuações Detalhadas",
         health: "💊 Saúde do Cabelo",
         volume: "🎈 Volume",
@@ -99,12 +99,12 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Penteado Recomendado",
         improvementTitle: "✨ Como Melhorar seu Cabelo",
         barberInstructionsTitle: "✂️ Instruções para Barbeiro",
-        backToHairMenu: "⬅️ Voltar aos Resultados"
+        backToHairMenu: "⬅️ Menu"
     },
     FR: {
         totalScore: "Score Total",
-        faceShape: "Forme du Visage",
-        currentStyle: "Coiffure Actuelle",
+        faceShape: "👤 Forme du Visage",
+        currentStyle: "💇 Coiffure Actuelle",
         details: "Scores Détaillés",
         health: "💊 Santé des Cheveux",
         volume: "🎈 Volume",
@@ -124,12 +124,12 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Coiffure Recommandée",
         improvementTitle: "✨ Comment Améliorer vos Cheveux",
         barberInstructionsTitle: "✂️ Instructions pour Coiffeur",
-        backToHairMenu: "⬅️ Retour aux Résultats"
+        backToHairMenu: "⬅️ Menu"
     },
     UA: {
         totalScore: "Загальна оцінка",
-        faceShape: "Форма обличчя",
-        currentStyle: "Поточна зачіска",
+        faceShape: "👤 Форма обличчя",
+        currentStyle: "💇 Поточна зачіска",
         details: "Детальні оцінки",
         health: "💊 Здоров'я волосся",
         volume: "🎈 Об'єм",
@@ -149,7 +149,7 @@ const hairUITranslations: Record<Language, HairUITranslations> = {
         hairstyleSuggestionTitle: "💡 Рекомендована зачіска",
         improvementTitle: "✨ Як покращити вашу зачіску",
         barberInstructionsTitle: "✂️ Інструкції для барбера",
-        backToHairMenu: "⬅️ До результатів"
+        backToHairMenu: "⬅️ Меню"
     }
 };
 

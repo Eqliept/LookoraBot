@@ -62,8 +62,6 @@ export const channelHandler = (bot) => {
             }
         }
         catch (error) {
-            // Если бот не может проверить подписку (нет прав админа в канале)
-            console.error("Error checking subscription:", error);
             await ctx.reply("❌ Не удалось проверить подписку. Убедитесь, что бот добавлен в канал как администратор.");
         }
     });

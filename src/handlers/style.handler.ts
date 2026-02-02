@@ -250,6 +250,8 @@ ${result.recommendations.map((r: string) => `💡 ${r}`).join("\n")}
 💎 ${ui.remaining} ${updatedUser?.coins ?? 0} coins`;
 
         const keyboard = new InlineKeyboard()
+            .text(ui.rateAgainButton, "rate_style")
+            .row()
             .text(ui.backToMenu, "back_menu");
 
         await ctx.reply(resultMessage, { reply_markup: keyboard });

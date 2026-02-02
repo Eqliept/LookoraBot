@@ -147,7 +147,11 @@ ${getProgressBar(s.eyebrows)}
 💎 ${ui.charged}: ${APPEARANCE_COST} coins
 💎 ${ui.remaining}: ${updatedUser?.coins ?? 0} coins`;
                 const keyboard = new InlineKeyboard()
+                    .text(`� ${ui.looksMaxingButton}`, "get_looksmax_rating")
+                    .row()
                     .text(`💡 ${ui.tipsButton}`, "get_improvement_tips")
+                    .row()
+                    .text(`🔄 ${ui.rateAgainButton}`, "rate_appearance")
                     .row()
                     .text(`⬅️ ${ui.backButton}`, "back_menu");
                 await ctx.reply(resultMessage, { reply_markup: keyboard });
@@ -183,6 +187,155 @@ ${tips}`;
         await ctx.reply(tipsMessage, {
             parse_mode: "Markdown",
             reply_markup: new InlineKeyboard().text(ui.backToMenu, "back_menu")
+        });
+    });
+    // Looksmaxing рейтинг
+    bot.callbackQuery("get_looksmax_rating", async (ctx) => {
+        const user = await findUser(ctx.from.id);
+        if (!user) {
+            await ctx.answerCallbackQuery({ text: "User not found" });
+            return;
+        }
+        const result = analysisResults.get(ctx.from.id);
+        if (!result) {
+            const ui = getAppearanceUI(user.language);
+            await ctx.answerCallbackQuery({ text: ui.noAnalysisYet, show_alert: true });
+            return;
+        }
+        await ctx.answerCallbackQuery();
+        const ui = getAppearanceUI(user.language);
+        // Определяем лукмаксинг уровень по оценке
+        const score = result.totalScore;
+        const getLooksMaxTier = (score, lang) => {
+            // Лукмаксинг шкала:
+            // 90-100: Gigachad / Gigastacy
+            // 80-89: Chad / Stacy
+            // 70-79: Chadlite / Stacylite
+            // 60-69: HTN (High Tier Normie)
+            // 50-59: MTN (Mid Tier Normie)
+            // 40-49: LTN (Low Tier Normie)
+            // 30-39: Subhuman / Below average
+            const tiers = {
+                gigachad: {
+                    tier: "GIGACHAD",
+                    emoji: "👑💎",
+                    desc: {
+                        RU: "Топ 1% внешности. Генетический джекпот. Модельный уровень, притягивает взгляды везде.",
+                        EN: "Top 1% looks. Genetic jackpot. Model-tier, draws attention everywhere.",
+                        ES: "Top 1% de apariencia. Premio genético. Nivel de modelo, atrae miradas en todas partes.",
+                        FR: "Top 1% d'apparence. Jackpot génétique. Niveau mannequin, attire les regards partout.",
+                        PT: "Top 1% de aparência. Jackpot genético. Nível modelo, atrai olhares em todos os lugares.",
+                        UA: "Топ 1% зовнішності. Генетичний джекпот. Модельний рівень, притягує погляди всюди."
+                    }
+                },
+                chad: {
+                    tier: "CHAD",
+                    emoji: "🔥💪",
+                    desc: {
+                        RU: "Топ 5% мужчин. Очень привлекательный, сильная челюсть, симметричное лицо. Легко привлекает внимание.",
+                        EN: "Top 5% of men. Very attractive, strong jawline, symmetrical face. Easily draws attention.",
+                        ES: "Top 5% de hombres. Muy atractivo, mandíbula fuerte, cara simétrica. Atrae fácilmente la atención.",
+                        FR: "Top 5% des hommes. Très attirant, mâchoire forte, visage symétrique. Attire facilement l'attention.",
+                        PT: "Top 5% dos homens. Muito atraente, mandíbula forte, rosto simétrico. Atrai atenção facilmente.",
+                        UA: "Топ 5% чоловіків. Дуже привабливий, сильна щелепа, симетричне обличчя. Легко привертає увагу."
+                    }
+                },
+                chadlite: {
+                    tier: "CHADLITE",
+                    emoji: "✨😎",
+                    desc: {
+                        RU: "Топ 15%. Выше среднего, хорошие черты лица. С правильным стилем и уходом может конкурировать с Chad.",
+                        EN: "Top 15%. Above average, good facial features. With right style and grooming can compete with Chad.",
+                        ES: "Top 15%. Por encima del promedio, buenos rasgos faciales. Con estilo y cuidado correcto puede competir con Chad.",
+                        FR: "Top 15%. Au-dessus de la moyenne, bons traits du visage. Avec le bon style et soin peut rivaliser avec Chad.",
+                        PT: "Top 15%. Acima da média, boas características faciais. Com estilo e cuidado certo pode competir com Chad.",
+                        UA: "Топ 15%. Вище середнього, гарні риси обличчя. З правильним стилем і доглядом може конкурувати з Chad."
+                    }
+                },
+                htn: {
+                    tier: "HTN (High Tier Normie)",
+                    emoji: "👍😊",
+                    desc: {
+                        RU: "Топ 30%. Привлекательный нормис. Хорошая внешность, приятные черты. Лукмаксинг может поднять до Chadlite.",
+                        EN: "Top 30%. Attractive normie. Good looks, pleasant features. Looksmaxxing can elevate to Chadlite.",
+                        ES: "Top 30%. Normie atractivo. Buena apariencia, rasgos agradables. Looksmaxxing puede elevar a Chadlite.",
+                        FR: "Top 30%. Normie attractif. Belle apparence, traits agréables. Le looksmaxxing peut élever à Chadlite.",
+                        PT: "Top 30%. Normie atraente. Boa aparência, traços agradáveis. Looksmaxxing pode elevar a Chadlite.",
+                        UA: "Топ 30%. Привабливий норміс. Гарна зовнішність, приємні риси. Лукмаксинг може підняти до Chadlite."
+                    }
+                },
+                mtn: {
+                    tier: "MTN (Mid Tier Normie)",
+                    emoji: "😐👤",
+                    desc: {
+                        RU: "Средний уровень. Обычная внешность, ни плохо ни хорошо. Есть потенциал для улучшения через лукмаксинг.",
+                        EN: "Average level. Normal appearance, neither bad nor good. Has potential for improvement through looksmaxxing.",
+                        ES: "Nivel medio. Apariencia normal, ni mala ni buena. Tiene potencial de mejora a través del looksmaxxing.",
+                        FR: "Niveau moyen. Apparence normale, ni mauvaise ni bonne. A un potentiel d'amélioration par le looksmaxxing.",
+                        PT: "Nível médio. Aparência normal, nem ruim nem boa. Tem potencial de melhoria através do looksmaxxing.",
+                        UA: "Середній рівень. Звичайна зовнішність, ні погано ні добре. Є потенціал для покращення через лукмаксинг."
+                    }
+                },
+                ltn: {
+                    tier: "LTN (Low Tier Normie)",
+                    emoji: "😕📉",
+                    desc: {
+                        RU: "Ниже среднего. Есть заметные недостатки. Требуется серьёзный лукмаксинг: уход, стиль, возможно хирургия.",
+                        EN: "Below average. Has noticeable flaws. Requires serious looksmaxxing: grooming, style, possibly surgery.",
+                        ES: "Por debajo del promedio. Tiene defectos notables. Requiere looksmaxxing serio: cuidado, estilo, posiblemente cirugía.",
+                        FR: "En dessous de la moyenne. A des défauts notables. Nécessite un looksmaxxing sérieux: soins, style, peut-être chirurgie.",
+                        PT: "Abaixo da média. Tem falhas notáveis. Requer looksmaxxing sério: cuidados, estilo, possivelmente cirurgia.",
+                        UA: "Нижче середнього. Є помітні недоліки. Потрібен серйозний лукмаксинг: догляд, стиль, можливо хірургія."
+                    }
+                },
+                subhuman: {
+                    tier: "SUBHUMAN",
+                    emoji: "😢⚠️",
+                    desc: {
+                        RU: "Значительно ниже среднего. Серьёзные эстетические проблемы. Максимальный фокус на лукмаксинг и self-improvement.",
+                        EN: "Significantly below average. Serious aesthetic issues. Maximum focus on looksmaxxing and self-improvement.",
+                        ES: "Significativamente por debajo del promedio. Problemas estéticos serios. Enfoque máximo en looksmaxxing y automejora.",
+                        FR: "Significativement en dessous de la moyenne. Problèmes esthétiques sérieux. Focus maximum sur le looksmaxxing et l'amélioration personnelle.",
+                        PT: "Significativamente abaixo da média. Problemas estéticos sérios. Foco máximo em looksmaxxing e automelhoria.",
+                        UA: "Значно нижче середнього. Серйозні естетичні проблеми. Максимальний фокус на лукмаксинг та self-improvement."
+                    }
+                }
+            };
+            let tierKey;
+            if (score >= 90)
+                tierKey = "gigachad";
+            else if (score >= 80)
+                tierKey = "chad";
+            else if (score >= 70)
+                tierKey = "chadlite";
+            else if (score >= 60)
+                tierKey = "htn";
+            else if (score >= 50)
+                tierKey = "mtn";
+            else if (score >= 40)
+                tierKey = "ltn";
+            else
+                tierKey = "subhuman";
+            const tier = tiers[tierKey];
+            return {
+                name: tier.tier,
+                emoji: tier.emoji,
+                description: tier.desc[lang] || tier.desc.EN
+            };
+        };
+        const tier = getLooksMaxTier(score, user.language || "EN");
+        const message = `${ui.looksMaxingTitle}
+
+${tier.emoji} ${ui.looksMaxingTier}: ${tier.name}
+📊 ${ui.totalScore}: ${score}/100
+
+📝 ${ui.looksMaxingDescription}:
+${tier.description}`;
+        await ctx.reply(message, {
+            reply_markup: new InlineKeyboard()
+                .text(`💡 ${ui.tipsButton}`, "get_improvement_tips")
+                .row()
+                .text(ui.backToMenu, "back_menu")
         });
     });
     bot.callbackQuery("back_menu", async (ctx, next) => {

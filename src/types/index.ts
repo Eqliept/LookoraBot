@@ -95,6 +95,11 @@ export interface AppearanceUITranslations {
     generatingTips: string;
     lookCoins: string;
     backToMenu: string;
+    rateAgainButton: string;
+    looksMaxingButton: string;
+    looksMaxingTitle: string;
+    looksMaxingTier: string;
+    looksMaxingDescription: string;
 }
 
 export interface GPTTranslationLabels {
@@ -156,4 +161,17 @@ export interface HairUITranslations {
     improvementTitle: string;
     barberInstructionsTitle: string;
     backToHairMenu: string;
+}
+
+// Результат баттла внешности
+export interface BattlePlayerResult {
+    scores: AppearanceScores;
+    totalScore: number;
+    overallCoefficient: number;
+}
+
+export interface BattleAnalysisResult {
+    player1: BattlePlayerResult;
+    player2: BattlePlayerResult;
+    verdict: string;
 }

@@ -40,7 +40,9 @@ export const authMiddleware = async (ctx, next) => {
         });
     }
     else if (ctx.message) {
-        await ctx.reply("❌ Please register first with /start command.\n\n🌍 Для начала работы выполните команду /start");
+        await ctx.reply(`❌ Please register first with /start command.
+
+🌍 Для начала работы выполните команду /start`);
     }
 };
 //# sourceMappingURL=autoLanguage.middleware.js.map

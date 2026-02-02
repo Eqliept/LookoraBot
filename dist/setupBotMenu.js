@@ -84,6 +84,5 @@ export async function setupBotCommands(bot) {
     ], {
         scope: { type: "chat", chat_id: ADMIN_ID }
     });
-    console.log("✅ Bot commands menu set up successfully");
 }
 //# sourceMappingURL=setupBotMenu.js.map

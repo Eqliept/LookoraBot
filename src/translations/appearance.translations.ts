@@ -28,7 +28,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "у вас:",
         generatingTips: "💭 Генерируем персональные советы...",
         lookCoins: "лук койнов",
-        backToMenu: "⬅️ В меню"
+        backToMenu: "⬅️ В меню",
+        rateAgainButton: "Оценить новую внешность",
+        looksMaxingButton: "Лукмаксинг рейтинг",
+        looksMaxingTitle: "💎 ЛУКМАКСИНГ РЕЙТИНГ",
+        looksMaxingTier: "Ваш уровень",
+        looksMaxingDescription: "Описание"
     },
     EN: {
         totalScore: "Total score",
@@ -57,7 +62,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "you have:",
         generatingTips: "💭 Generating personalized tips...",
         lookCoins: "look coins",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "Rate new appearance",
+        looksMaxingButton: "Looksmax rating",
+        looksMaxingTitle: "💎 LOOKSMAX RATING",
+        looksMaxingTier: "Your tier",
+        looksMaxingDescription: "Description"
     },
     ES: {
         totalScore: "Puntuación total",
@@ -86,7 +96,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "tiene:",
         generatingTips: "💭 Generando consejos personalizados...",
         lookCoins: "look coins",
-        backToMenu: "⬅️ Menú"
+        backToMenu: "⬅️ Menú",
+        rateAgainButton: "Evaluar nueva apariencia",
+        looksMaxingButton: "Rating Looksmax",
+        looksMaxingTitle: "💎 RATING LOOKSMAX",
+        looksMaxingTier: "Tu nivel",
+        looksMaxingDescription: "Descripción"
     },
     FR: {
         totalScore: "Score total",
@@ -115,7 +130,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "vous avez:",
         generatingTips: "💭 Génération de conseils personnalisés...",
         lookCoins: "look coins",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "Évaluer nouvelle apparence",
+        looksMaxingButton: "Rating Looksmax",
+        looksMaxingTitle: "💎 RATING LOOKSMAX",
+        looksMaxingTier: "Votre niveau",
+        looksMaxingDescription: "Description"
     },
     PT: {
         totalScore: "Pontuação total",
@@ -144,7 +164,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "você tem:",
         generatingTips: "💭 Gerando dicas personalizadas...",
         lookCoins: "look coins",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "Avaliar nova aparência",
+        looksMaxingButton: "Rating Looksmax",
+        looksMaxingTitle: "💎 RATING LOOKSMAX",
+        looksMaxingTier: "Seu nível",
+        looksMaxingDescription: "Descrição"
     },
     UA: {
         totalScore: "Загальна оцінка",
@@ -173,7 +198,12 @@ export const appearanceUITranslations: Record<Language, AppearanceUITranslations
         youHave: "у вас:",
         generatingTips: "💭 Генеруємо персональні поради...",
         lookCoins: "лук коінів",
-        backToMenu: "⬅️ Меню"
+        backToMenu: "⬅️ Меню",
+        rateAgainButton: "Оцінити нову зовнішність",
+        looksMaxingButton: "Лукмаксинг рейтинг",
+        looksMaxingTitle: "💎 ЛУКМАКСИНГ РЕЙТИНГ",
+        looksMaxingTier: "Ваш рівень",
+        looksMaxingDescription: "Опис"
     }
 };
 

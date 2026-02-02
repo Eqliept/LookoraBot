@@ -249,6 +249,18 @@ export const startHandler = (bot: Bot<MyContext>) => {
         }
     });
 
+    bot.callbackQuery("help_battle", async (ctx) => {
+        try {
+            await ctx.reply(ctx.t("help-battle-text"), {
+                reply_markup: getBackKeyboard(ctx)
+            });
+            await ctx.answerCallbackQuery();
+        } catch (error) {
+            logError(error as Error, 'help_battle', { userId: ctx.from?.id });
+            await ctx.answerCallbackQuery();
+        }
+    });
+
     bot.callbackQuery("help_coins", async (ctx) => {
         try {
             const lang = await getUserLanguage(ctx);

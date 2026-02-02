@@ -44,11 +44,9 @@ export const createCryptoBotInvoice = async (params: CreateInvoiceParams): Promi
         if (data.ok) {
             return data.result as CryptoBotInvoice;
         } else {
-            console.error("CryptoBot API error:", data.error);
             return null;
         }
     } catch (error) {
-        console.error("CryptoBot request error:", error);
         return null;
     }
 };
@@ -73,7 +71,6 @@ export const checkInvoiceStatus = async (invoiceId: number): Promise<string | nu
         }
         return null;
     } catch (error) {
-        console.error("CryptoBot check error:", error);
         return null;
     }
 };

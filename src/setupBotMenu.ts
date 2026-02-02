@@ -97,6 +97,4 @@ export async function setupBotCommands(bot: Bot<MyContext>) {
     ], { 
         scope: { type: "chat", chat_id: ADMIN_ID } 
     });
-
-    console.log("✅ Bot commands menu set up successfully");
 }

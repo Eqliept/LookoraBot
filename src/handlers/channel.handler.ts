@@ -83,8 +83,6 @@ export const channelHandler = (bot: Bot<MyContext>) => {
                 await ctx.reply(ctx.t("bonus-already-claimed"));
             }
         } catch (error) {
-            // Если бот не может проверить подписку (нет прав админа в канале)
-            console.error("Error checking subscription:", error);
             await ctx.reply("❌ Не удалось проверить подписку. Убедитесь, что бот добавлен в канал как администратор.");
         }
     });

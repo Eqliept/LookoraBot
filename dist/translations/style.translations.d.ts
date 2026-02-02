@@ -37,6 +37,7 @@ export interface StyleUITranslations {
     charged: string;
     remaining: string;
     backToMenu: string;
+    rateAgainButton: string;
 }
 export declare const styleUITranslations: Record<Language, StyleUITranslations>;
 export declare const getStyleUI: (lang: Language) => StyleUITranslations;

@@ -31,7 +31,6 @@ export const getPackageInfo = (amount) => {
 export const processTopUp = async (userId, amount) => {
     const { total } = getPackageInfo(amount);
     // TODO: Реальная логика оплаты
-    console.log(`[MOCK] User ${userId} topped up ${amount} coins, received ${total} with bonus`);
     return {
         success: true,
         total

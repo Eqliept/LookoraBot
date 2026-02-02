@@ -22,12 +22,10 @@ export const createCryptoBotInvoice = async (params) => {
             return data.result;
         }
         else {
-            console.error("CryptoBot API error:", data.error);
             return null;
         }
     }
     catch (error) {
-        console.error("CryptoBot request error:", error);
         return null;
     }
 };
@@ -50,7 +48,6 @@ export const checkInvoiceStatus = async (invoiceId) => {
         return null;
     }
     catch (error) {
-        console.error("CryptoBot check error:", error);
         return null;
     }
 };

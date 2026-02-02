@@ -20,5 +20,4 @@ createHandlers(bot);
 setupBotCommands(bot).then(() => {
     bot.start();
     logger.info("🤖 Bot started successfully!");
-    console.log("🤖 Bot started!");
 });

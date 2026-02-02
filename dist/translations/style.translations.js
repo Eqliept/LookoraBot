@@ -15,8 +15,15 @@ export const styleUITranslations = {
         customDesc: "Опишите свой контекст кратко.",
         enterCustomDesc: "✏️ Введите краткое описание контекста (4-30 символов):",
         invalidCustomDesc: "❌ Описание должно быть от 4 до 30 символов. Попробуйте снова:",
-        sendFullBodyPhoto: "📸 Отправьте фото в ПОЛНЫЙ РОСТ\n\nТребования:\n• Хорошее освещение\n• Виден весь образ с головы до ног\n• Одежда и аксессуары хорошо видны",
-        analyzingStyle: "🔍 Анализируем ваш стиль...\n\nЭто займёт несколько секунд.",
+        sendFullBodyPhoto: `📸 ОЦЕНКА СТИЛЯ
+
+Отправьте фото в ПОЛНЫЙ РОСТ:
+• Хорошее освещение
+• Весь образ виден
+• Одежда и аксессуары чётко видны`,
+        analyzingStyle: `🔍 Анализируем ваш стиль...
+
+Это займёт несколько секунд.`,
         styleResultTitle: "✨ Результат анализа стиля",
         totalScore: "Общая оценка",
         contextCoefficient: "Соответствие контексту",
@@ -36,7 +43,8 @@ export const styleUITranslations = {
         recommendations: "💡 Рекомендации",
         charged: "Списано:",
         remaining: "Остаток:",
-        backToMenu: "⬅️ В меню"
+        backToMenu: "⬅️ В меню",
+        rateAgainButton: "🔄 Оценить новый стиль"
     },
     EN: {
         selectCategory: "👔 Choose the style purpose:",
@@ -54,8 +62,15 @@ export const styleUITranslations = {
         customDesc: "Describe your context briefly.",
         enterCustomDesc: "✏️ Enter a brief description of the context (4-30 characters):",
         invalidCustomDesc: "❌ Description must be 4-30 characters. Try again:",
-        sendFullBodyPhoto: "📸 Send a FULL BODY photo\n\nRequirements:\n• Good lighting\n• Full outfit visible from head to toe\n• Clothes and accessories clearly visible",
-        analyzingStyle: "🔍 Analyzing your style...\n\nThis will take a few seconds.",
+        sendFullBodyPhoto: `📸 STYLE RATING
+
+Send a FULL BODY photo:
+• Good lighting
+• Full outfit visible
+• Clothes and accessories clearly visible`,
+        analyzingStyle: `🔍 Analyzing your style...
+
+This will take a few seconds.`,
         styleResultTitle: "✨ Style Analysis Result",
         totalScore: "Total score",
         contextCoefficient: "Context match",
@@ -75,7 +90,8 @@ export const styleUITranslations = {
         recommendations: "💡 Recommendations",
         charged: "Charged:",
         remaining: "Remaining:",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "🔄 Rate new style"
     },
     ES: {
         selectCategory: "👔 Elige para qué es el estilo:",
@@ -93,8 +109,15 @@ export const styleUITranslations = {
         customDesc: "Describe tu contexto brevemente.",
         enterCustomDesc: "✏️ Ingresa una breve descripción del contexto (4-30 caracteres):",
         invalidCustomDesc: "❌ La descripción debe tener 4-30 caracteres. Intenta de nuevo:",
-        sendFullBodyPhoto: "📸 Envía una foto de CUERPO COMPLETO\n\nRequisitos:\n• Buena iluminación\n• Outfit completo visible de cabeza a pies\n• Ropa y accesorios claramente visibles",
-        analyzingStyle: "🔍 Analizando tu estilo...\n\nEsto tomará unos segundos.",
+        sendFullBodyPhoto: `📸 EVALUACIÓN DE ESTILO
+
+Envía una foto de CUERPO COMPLETO:
+• Buena iluminación
+• Outfit completo visible
+• Ropa y accesorios claramente visibles`,
+        analyzingStyle: `🔍 Analizando tu estilo...
+
+Esto tomará unos segundos.`,
         styleResultTitle: "✨ Resultado del análisis de estilo",
         totalScore: "Puntuación total",
         contextCoefficient: "Adecuación al contexto",
@@ -114,7 +137,8 @@ export const styleUITranslations = {
         recommendations: "💡 Recomendaciones",
         charged: "Cobrado:",
         remaining: "Restante:",
-        backToMenu: "⬅️ Menú"
+        backToMenu: "⬅️ Menú",
+        rateAgainButton: "🔄 Evaluar nuevo estilo"
     },
     FR: {
         selectCategory: "👔 Choisissez l'objectif du style:",
@@ -132,8 +156,15 @@ export const styleUITranslations = {
         customDesc: "Décrivez brièvement votre contexte.",
         enterCustomDesc: "✏️ Entrez une brève description du contexte (4-30 caractères):",
         invalidCustomDesc: "❌ La description doit contenir 4-30 caractères. Réessayez:",
-        sendFullBodyPhoto: "📸 Envoyez une photo en PIED\n\nExigences:\n• Bon éclairage\n• Tenue complète visible de la tête aux pieds\n• Vêtements et accessoires clairement visibles",
-        analyzingStyle: "🔍 Analyse de votre style...\n\nCela prendra quelques secondes.",
+        sendFullBodyPhoto: `📸 ÉVALUATION DE STYLE
+
+Envoyez une photo en PIED:
+• Bon éclairage
+• Tenue complète visible
+• Vêtements et accessoires clairement visibles`,
+        analyzingStyle: `🔍 Analyse de votre style...
+
+Cela prendra quelques secondes.`,
         styleResultTitle: "✨ Résultat de l'analyse de style",
         totalScore: "Score total",
         contextCoefficient: "Adéquation au contexte",
@@ -153,7 +184,8 @@ export const styleUITranslations = {
         recommendations: "💡 Recommandations",
         charged: "Facturé:",
         remaining: "Restant:",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "🔄 Évaluer nouveau style"
     },
     PT: {
         selectCategory: "👔 Escolha o propósito do estilo:",
@@ -171,8 +203,15 @@ export const styleUITranslations = {
         customDesc: "Descreva seu contexto brevemente.",
         enterCustomDesc: "✏️ Digite uma breve descrição do contexto (4-30 caracteres):",
         invalidCustomDesc: "❌ A descrição deve ter 4-30 caracteres. Tente novamente:",
-        sendFullBodyPhoto: "📸 Envie uma foto de CORPO INTEIRO\n\nRequisitos:\n• Boa iluminação\n• Visual completo visível da cabeça aos pés\n• Roupas e acessórios claramente visíveis",
-        analyzingStyle: "🔍 Analisando seu estilo...\n\nIsso levará alguns segundos.",
+        sendFullBodyPhoto: `📸 AVALIAÇÃO DE ESTILO
+
+Envie uma foto de CORPO INTEIRO:
+• Boa iluminação
+• Visual completo visível
+• Roupas e acessórios claramente visíveis`,
+        analyzingStyle: `🔍 Analisando seu estilo...
+
+Isso levará alguns segundos.`,
         styleResultTitle: "✨ Resultado da análise de estilo",
         totalScore: "Pontuação total",
         contextCoefficient: "Adequação ao contexto",
@@ -192,7 +231,8 @@ export const styleUITranslations = {
         recommendations: "💡 Recomendações",
         charged: "Cobrado:",
         remaining: "Restante:",
-        backToMenu: "⬅️ Menu"
+        backToMenu: "⬅️ Menu",
+        rateAgainButton: "🔄 Avaliar novo estilo"
     },
     UA: {
         selectCategory: "👔 Виберіть для чого стиль:",
@@ -210,8 +250,15 @@ export const styleUITranslations = {
         customDesc: "Опишіть свій контекст коротко.",
         enterCustomDesc: "✏️ Введіть короткий опис контексту (4-30 символів):",
         invalidCustomDesc: "❌ Опис повинен бути від 4 до 30 символів. Спробуйте ще:",
-        sendFullBodyPhoto: "📸 Надішліть фото на ПОВНИЙ ЗРІСТ\n\nВимоги:\n• Гарне освітлення\n• Видно весь образ з голови до ніг\n• Одяг та аксесуари добре видно",
-        analyzingStyle: "🔍 Аналізуємо ваш стиль...\n\nЦе займе кілька секунд.",
+        sendFullBodyPhoto: `📸 ОЦІНКА СТИЛЮ
+
+Надішліть фото на ПОВНИЙ ЗРІСТ:
+• Гарне освітлення
+• Видно весь образ
+• Одяг та аксесуари чітко видно`,
+        analyzingStyle: `🔍 Аналізуємо ваш стиль...
+
+Це займе кілька секунд.`,
         styleResultTitle: "✨ Результат аналізу стилю",
         totalScore: "Загальна оцінка",
         contextCoefficient: "Відповідність контексту",
@@ -231,7 +278,8 @@ export const styleUITranslations = {
         recommendations: "💡 Рекомендації",
         charged: "Списано:",
         remaining: "Залишок:",
-        backToMenu: "⬅️ Меню"
+        backToMenu: "⬅️ Меню",
+        rateAgainButton: "🔄 Оцінити новий стиль"
     }
 };
 export const getStyleUI = (lang) => styleUITranslations[lang] || styleUITranslations.EN;
