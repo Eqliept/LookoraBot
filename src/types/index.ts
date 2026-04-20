@@ -1,70 +1,63 @@
-// Языки
+
 export type Language = "RU" | "EN" | "ES" | "PT" | "FR" | "UA";
 
-// Пользователь
 export interface User {
     id: number;
     language: Language;
     coins: number;
 }
 
-// Сессия сбора фото
 export interface UserPhotoSession {
     stage: "front" | "side";
     frontPhotoUrl?: string;
 }
 
-// Категории стиля
 export type StyleCategory = "casual" | "work" | "date" | "social" | "event" | "custom";
 
-// Сессия оценки стиля
 export interface StylePhotoSession {
     category: StyleCategory;
     customDescription?: string;
 }
 
-// Результат анализа стиля
 export interface StyleScores {
-    colorHarmony: number;      // Гармония цветов
-    fit: number;               // Посадка одежды
-    styleConsistency: number;  // Единство стиля
-    accessories: number;       // Аксессуары
-    grooming: number;          // Ухоженность и опрятность
-    contextMatch: number;      // Соответствие контексту
+    colorHarmony: number;
+    fit: number;
+    styleConsistency: number;
+    accessories: number;
+    grooming: number;
+    contextMatch: number;
 }
 
 export interface StyleAnalysisResult {
     scores: StyleScores;
     totalScore: number;
-    overallCoefficient: number; // Коэффициент соответствия контексту (0.3-1.0)
-    strengths: string[];       // Сильные стороны
-    improvements: string[];    // Что улучшить
-    recommendations: string[]; // Рекомендации
+    overallCoefficient: number;
+    strengths: string[];
+    improvements: string[];
+    recommendations: string[];
 }
 
-// Результат валидации фото
 export interface PhotoValidationResult {
     isValid: boolean;
     error?: string;
 }
 
-// Детализированный результат анализа внешности
 export interface AppearanceScores {
-    eyes: number;        // Глаза
-    nose: number;        // Нос
-    lips: number;        // Губы
-    skin: number;        // Кожа
-    jawline: number;     // Челюсть/подбородок
-    cheekbones: number;  // Скулы
-    symmetry: number;    // Симметрия
-    eyebrows: number;    // Брови
+    eyes: number;
+    nose: number;
+    lips: number;
+    skin: number;
+    jawline: number;
+    cheekbones: number;
+    symmetry: number;
+    eyebrows: number;
 }
 
 export interface AppearanceAnalysisResult {
     scores: AppearanceScores;
     totalScore: number;
-    overallCoefficient: number;  // Коэффициент общего впечатления (0.5-1.0)
-    weakPoints: string[];  // Слабые места для улучшения
+    overallCoefficient: number;
+    weakPoints: string[];
 }
 
 export interface AppearanceUITranslations {
@@ -118,23 +111,22 @@ export interface GPTTranslation {
     labels: GPTTranslationLabels;
 }
 
-// Результат анализа волос
 export interface HairScores {
-    health: number;        // Здоровье волос
-    volume: number;        // Объем
-    texture: number;       // Текстура/структура
-    color: number;         // Цвет (натуральность/качество окрашивания)
-    styling: number;       // Укладка
-    maintenance: number;   // Ухоженность
+    health: number;
+    volume: number;
+    texture: number;
+    color: number;
+    styling: number;
+    maintenance: number;
 }
 
 export interface HairAnalysisResult {
     scores: HairScores;
     totalScore: number;
-    faceShape: string;          // Форма лица
-    currentStyle: string;       // Описание текущей прически
-    strengths: string[];        // Сильные стороны
-    improvements: string[];     // Что можно улучшить
+    faceShape: string;
+    currentStyle: string;
+    strengths: string[];
+    improvements: string[];
 }
 
 export interface HairUITranslations {
@@ -163,7 +155,6 @@ export interface HairUITranslations {
     backToHairMenu: string;
 }
 
-// Результат баттла внешности
 export interface BattlePlayerResult {
     scores: AppearanceScores;
     totalScore: number;

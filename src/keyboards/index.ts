@@ -1,7 +1,6 @@
-// Utility function
+
 export { padText } from "./utils.js";
 
-// Keyboards
 export { getLanguageKeyboard } from "./language.keyboard.js";
 export { getMainMenuKeyboard } from "./mainMenu.keyboard.js";
 export { getBackKeyboard } from "./back.keyboard.js";

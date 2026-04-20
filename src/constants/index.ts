@@ -8,7 +8,6 @@ export const BATTLE_COST = 100;
 
 export const ADMIN_ID = 1529335902;
 
-// Канал для получения бонуса
 export const CHANNEL_ID = -1003725350365;
 export const CHANNEL_URL = "https://t.me/lookorab";
 export const CHANNEL_BONUS = 50;

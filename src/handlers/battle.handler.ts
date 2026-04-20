@@ -51,7 +51,7 @@ export const battleHandler = (bot: Bot<MyContext>) => {
         }
 
         const ui = getBattleUI((user.language || "EN") as Language);
-        
+
         battleSessions.set(ctx.from!.id, { stage: "player1_front" });
 
         await ctx.replyWithPhoto(new InputFile(FRONT_PHOTO_EXAMPLE), {
@@ -69,7 +69,7 @@ export const battleHandler = (bot: Bot<MyContext>) => {
         if (!user) return next();
 
         const ui = getBattleUI((user.language || "EN") as Language);
-        
+
         const photo = ctx.message.photo[ctx.message.photo.length - 1]!;
         const photoUrl = await getTelegramFileUrl(process.env.BOT_TOKEN!, photo.file_id);
 
@@ -87,7 +87,7 @@ export const battleHandler = (bot: Bot<MyContext>) => {
 
         if (!validation.isValid) {
             const updatedUser = await incrementPreCheckFails(ctx.from!.id);
-            
+
             let penaltyMessage = "";
             if (updatedUser && updatedUser.preCheckFails >= PRECHECK_FREE_ATTEMPTS) {
                 const deducted = await deductCoins(ctx.from!.id, PRECHECK_PENALTY);
@@ -100,14 +100,13 @@ export const battleHandler = (bot: Bot<MyContext>) => {
                     penaltyMessage = `\n\n💡 ${ctx.t("precheck-warning", { remaining })}`;
                 }
             }
-            
+
             await ctx.reply(ctx.t("photo-invalid", { error: validation.error || ui.photoInvalid }) + penaltyMessage);
             return;
         }
-        
+
         await resetPreCheckFails(ctx.from!.id);
 
-        // Обработка стадий баттла
         if (session.stage === "player1_front") {
             session.player1FrontUrl = photoUrl;
             session.stage = "player1_side";
@@ -136,7 +135,6 @@ export const battleHandler = (bot: Bot<MyContext>) => {
             session.player2SideUrl = photoUrl;
             battleSessions.delete(ctx.from!.id);
 
-            // Списываем монеты и получаем обновлённого пользователя
             const updatedUser = await removeCoinsFromUser(ctx.from!.id, BATTLE_COST);
             if (!updatedUser) {
                 await ctx.reply(ctx.t("not-enough-coins", { balance: user.coins, required: BATTLE_COST }));
@@ -153,21 +151,19 @@ export const battleHandler = (bot: Bot<MyContext>) => {
                     photoUrl,
                     (user.language || "EN") as Language
                 );
-                
+
                 await logAnalysis(ctx.from!.id, 'appearance', BATTLE_COST, true, { type: 'battle' });
 
                 await ctx.api.deleteMessage(ctx.chat!.id, analyzingMsg.message_id);
 
                 const p1 = result.player1;
                 const p2 = result.player2;
-                
-                // Определяем победителя
+
                 const winner = p1.totalScore > p2.totalScore ? 1 : p1.totalScore < p2.totalScore ? 2 : 0;
                 const scoreDiff = Math.abs(p1.totalScore - p2.totalScore);
-                
+
                 let resultMessage = `⚔️ ${ui.battleTitle}\n\n`;
-                
-                // Итоговые оценки
+
                 if (winner === 1) {
                     resultMessage += `${getWinnerEmoji(scoreDiff)} ${ui.player1}: ${p1.totalScore}/100 — ${ui.winner}!\n`;
                     resultMessage += `   ${ui.player2}: ${p2.totalScore}/100\n\n`;
@@ -179,10 +175,9 @@ export const battleHandler = (bot: Bot<MyContext>) => {
                     resultMessage += `🤝 ${ui.player2}: ${p2.totalScore}/100\n`;
                     resultMessage += `\n🤝 ${ui.draw}!\n\n`;
                 }
-                
-                // Детальное сравнение
+
                 resultMessage += `📊 ${ui.comparison}:\n\n`;
-                
+
                 const params = [
                     { key: 'eyes', label: ui.eyes },
                     { key: 'nose', label: ui.nose },
@@ -193,7 +188,7 @@ export const battleHandler = (bot: Bot<MyContext>) => {
                     { key: 'symmetry', label: ui.symmetry },
                     { key: 'eyebrows', label: ui.eyebrows }
                 ];
-                
+
                 for (const param of params) {
                     const v1 = p1.scores[param.key as keyof typeof p1.scores];
                     const v2 = p2.scores[param.key as keyof typeof p2.scores];
@@ -202,17 +197,15 @@ export const battleHandler = (bot: Bot<MyContext>) => {
                     resultMessage += `  ${ui.player1}: ${v1} ${v1 > v2 ? "✓" : ""}\n`;
                     resultMessage += `  ${ui.player2}: ${v2} ${v2 > v1 ? "✓" : ""}\n\n`;
                 }
-                
-                // Коэффициенты впечатления
+
                 resultMessage += `🎯 ${ui.impressionCoeff}:\n`;
                 resultMessage += `  ${ui.player1}: ×${p1.overallCoefficient.toFixed(2)}\n`;
                 resultMessage += `  ${ui.player2}: ×${p2.overallCoefficient.toFixed(2)}\n\n`;
-                
-                // Вердикт
+
                 if (winner !== 0) {
                     resultMessage += `\n📝 ${ui.verdict}:\n${result.verdict}\n\n`;
                 }
-                
+
                 resultMessage += `💎 ${ui.charged}: ${BATTLE_COST} coins\n`;
                 resultMessage += `💎 ${ui.remaining}: ${updatedUser?.coins ?? 0} coins`;
 

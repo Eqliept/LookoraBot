@@ -13,7 +13,6 @@ import * as process from "node:process";
 
 const HAIR_COST = 75;
 
-// Структура для хранения результатов с отслеживанием использованных кнопок
 interface HairAnalysisData {
     result: HairAnalysisResult;
     photoUrl: string;
@@ -29,7 +28,6 @@ interface HairAnalysisData {
 const hairAnalysisResults = new Map<string, HairAnalysisData>();
 const hairPhotoSessions = new Map<number, { frontPhotoUrl?: string; sidePhotoUrl?: string }>();
 
-// Перевод форм лица
 const translateFaceShape = (shape: string, lang: Language): string => {
     const shapeTranslations: Record<string, Record<Language, string>> = {
         "oval": { RU: "Овальная", EN: "Oval", UA: "Овальна", ES: "Ovalada", PT: "Oval", FR: "Ovale" },
@@ -40,7 +38,7 @@ const translateFaceShape = (shape: string, lang: Language): string => {
         "oblong": { RU: "Продолговатая", EN: "Oblong", UA: "Довгаста", ES: "Oblonga", PT: "Oblonga", FR: "Oblongue" },
         "triangle": { RU: "Треугольная", EN: "Triangle", UA: "Трикутна", ES: "Triángulo", PT: "Triângulo", FR: "Triangle" }
     };
-    
+
     const lowerShape = shape.toLowerCase();
     for (const [key, translations] of Object.entries(shapeTranslations)) {
         if (lowerShape.includes(key)) {
@@ -50,7 +48,6 @@ const translateFaceShape = (shape: string, lang: Language): string => {
     return shape;
 };
 
-// Функции для генерации текста инструкций
 const getFrontPhotoText = (lang: Language): string => {
     const texts = {
         RU: `💇 ОЦЕНКА ВОЛОС (1/2)
@@ -209,7 +206,7 @@ const getRatingEmoji = (value: number): string => {
 };
 
 export const hairHandler = (bot: Bot<MyContext>) => {
-    // Начало оценки волос
+
     bot.callbackQuery("rate_hair", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) {
@@ -226,9 +223,8 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Инициализируем сессию для двух фото
         hairPhotoSessions.set(ctx.from!.id, {});
-        
+
         await ctx.replyWithPhoto(new InputFile(FRONT_PHOTO_EXAMPLE), {
             caption: getFrontPhotoText((user.language || "EN") as Language),
             reply_markup: getBackKeyboard(ctx)
@@ -236,42 +232,38 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Обработка загруженного фото для анализа волос
     bot.on("message:photo", async (ctx, next) => {
         const user = await findUser(ctx.from!.id);
         if (!user) return next();
 
-        // Проверяем, есть ли активная сессия
         const session = hairPhotoSessions.get(ctx.from!.id);
         if (!session) return next();
-        
+
         try {
             const photo = ctx.message.photo?.[ctx.message.photo.length - 1];
             if (!photo) return;
-            
+
             const photoUrl = await getTelegramFileUrl(process.env.BOT_TOKEN!, photo.file_id);
-            
+
             if (!photoUrl) {
                 await ctx.reply(ctx.t("error-occurred"));
                 return;
             }
 
-            // Если это первое фото (фронтальное)
             if (!session.frontPhotoUrl) {
                 const loadingMsg = await ctx.reply(ctx.t("hair-analyzing"));
-                
-                // Валидация фронтального фото
+
                 const validation = await validatePhoto(photoUrl, "front", (user.language || "EN") as Language);
-                
+
                 await ctx.api.deleteMessage(ctx.chat!.id, loadingMsg.message_id);
-                
+
                 if (!validation.isValid) {
                     const currentFails = user.preCheckFails || 0;
-                    
+
                     if (currentFails < PRECHECK_FREE_ATTEMPTS) {
                         await incrementPreCheckFails(Number(user.id));
                         const remainingFree = PRECHECK_FREE_ATTEMPTS - currentFails - 1;
-                        
+
                         await ctx.reply(
                             ctx.t("hair-validation-failed-free", {
                                 error: validation.error || "Invalid photo",
@@ -282,7 +274,7 @@ export const hairHandler = (bot: Bot<MyContext>) => {
                     } else {
                         await deductCoins(Number(user.id), PRECHECK_PENALTY);
                         await incrementPreCheckFails(Number(user.id));
-                        
+
                         await ctx.reply(
                             ctx.t("hair-validation-failed-paid", {
                                 error: validation.error || "Invalid photo",
@@ -294,34 +286,31 @@ export const hairHandler = (bot: Bot<MyContext>) => {
                     }
                     return;
                 }
-                
-                // Сохраняем фронтальное фото и запрашиваем боковое
+
                 session.frontPhotoUrl = photoUrl;
                 hairPhotoSessions.set(ctx.from!.id, session);
-                
+
                 await ctx.replyWithPhoto(new InputFile(SIDE_PHOTO_EXAMPLE), {
                     caption: getSidePhotoText((user.language || "EN") as Language),
                     reply_markup: getBackKeyboard(ctx)
                 });
                 return;
             }
-            
-            // Если это второе фото (боковое)
+
             if (session.frontPhotoUrl && !session.sidePhotoUrl) {
                 const loadingMsg = await ctx.reply(ctx.t("hair-analyzing"));
-                
-                // Валидация бокового фото
+
                 const validation = await validatePhoto(photoUrl, "side", (user.language || "EN") as Language);
-                
+
                 if (!validation.isValid) {
                     await ctx.api.deleteMessage(ctx.chat!.id, loadingMsg.message_id);
-                    
+
                     const currentFails = user.preCheckFails || 0;
-                    
+
                     if (currentFails < PRECHECK_FREE_ATTEMPTS) {
                         await incrementPreCheckFails(Number(user.id));
                         const remainingFree = PRECHECK_FREE_ATTEMPTS - currentFails - 1;
-                        
+
                         await ctx.reply(
                             ctx.t("hair-validation-failed-free", {
                                 error: validation.error || "Invalid photo",
@@ -332,7 +321,7 @@ export const hairHandler = (bot: Bot<MyContext>) => {
                     } else {
                         await deductCoins(Number(user.id), PRECHECK_PENALTY);
                         await incrementPreCheckFails(Number(user.id));
-                        
+
                         await ctx.reply(
                             ctx.t("hair-validation-failed-paid", {
                                 error: validation.error || "Invalid photo",
@@ -342,23 +331,19 @@ export const hairHandler = (bot: Bot<MyContext>) => {
                             { reply_markup: getBackKeyboard(ctx) }
                         );
                     }
-                    
-                    // Не сбрасываем сессию, чтобы пользователь мог попробовать снова
+
                     return;
                 }
-                
-                // Сохраняем боковое фото
+
                 session.sidePhotoUrl = photoUrl;
 
-                // Списываем койны и анализируем
                 const newBalance = await deductCoins(Number(user.id), HAIR_COST);
                 await resetPreCheckFails(Number(user.id));
 
                 const analysisResult = await analyzeHair(session.frontPhotoUrl, (user.language || "EN") as Language);
-                
-                // Сохраняем результат с отслеживанием использованных кнопок и полом
-                hairAnalysisResults.set(user.id, { 
-                    result: analysisResult, 
+
+                hairAnalysisResults.set(user.id, {
+                    result: analysisResult,
                     photoUrl: session.frontPhotoUrl,
                     gender: analysisResult.gender || "male",
                     usedButtons: {
@@ -367,22 +352,20 @@ export const hairHandler = (bot: Bot<MyContext>) => {
                         barber: false
                     }
                 });
-                
-                // Очищаем сессию
+
                 hairPhotoSessions.delete(ctx.from!.id);
 
                 await ctx.api.deleteMessage(ctx.chat!.id, loadingMsg.message_id);
 
-                // Формируем сообщение с результатами
                 const ui = getHairUI((user.language || "EN") as Language);
                 const scores = analysisResult.scores;
 
                 let message = `${getRatingEmoji(analysisResult.totalScore)} ${ui.totalScore}: ${analysisResult.totalScore}/100\n\n`;
-                
+
                 message += `${ui.faceShape}:\n${translateFaceShape(analysisResult.faceShape, (user.language || "EN") as Language)}\n\n`;
                 const capitalizedStyle = analysisResult.currentStyle.charAt(0).toUpperCase() + analysisResult.currentStyle.slice(1);
                 message += `${ui.currentStyle}:\n${capitalizedStyle}\n\n`;
-                
+
                 message += `${ui.details}:\n\n`;
                 message += `${ui.health}: ${scores.health}/100\n${getProgressBar(scores.health)}\n\n`;
                 message += `${ui.volume}: ${scores.volume}/100\n${getProgressBar(scores.volume)}\n\n`;
@@ -406,7 +389,7 @@ export const hairHandler = (bot: Bot<MyContext>) => {
 
                 await logAnalysis(
                     Number(user.telegramId),
-                    "style", // используем style т.к. hair еще нет в типах
+                    "style",
                     HAIR_COST,
                     true,
                     { hairScore: analysisResult.totalScore }
@@ -421,7 +404,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Подбор прически
     bot.callbackQuery("hair_suggest", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) return;
@@ -432,7 +414,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Проверяем, была ли кнопка уже использована
         if (analysis.usedButtons.suggest) {
             await ctx.answerCallbackQuery({ text: "⚠️ Уже использовано", show_alert: true });
             return;
@@ -443,24 +424,21 @@ export const hairHandler = (bot: Bot<MyContext>) => {
 
         try {
             const suggestion = await suggestHairstyle(analysis.photoUrl, analysis.result, (user.language || "EN") as Language);
-            
-            // Сохраняем suggestion и отмечаем кнопку как использованную
+
             analysis.suggestion = suggestion;
             analysis.usedButtons.suggest = true;
             hairAnalysisResults.set(user.id, analysis);
 
             await ctx.api.deleteMessage(ctx.chat!.id, loadingMsg.message_id);
 
-            // Показываем кнопку барбера только если она еще не использована
             const keyboard = new InlineKeyboard();
             if (!analysis.usedButtons.barber) {
                 keyboard.text(ui.barberInstructionsButton, "hair_barber").row();
             }
             keyboard.text(ui.backToHairMenu, "back_menu");
 
-            // Убираем markdown символы из suggestion
             const cleanSuggestion = suggestion.replace(/\*\*/g, '').replace(/\*/g, '');
-            
+
             await ctx.reply(`${ui.hairstyleSuggestionTitle}\n\n${cleanSuggestion}`, {
                 reply_markup: keyboard
             });
@@ -474,7 +452,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Как улучшить текущую прическу
     bot.callbackQuery("hair_improve", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) return;
@@ -485,7 +462,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Проверяем, была ли кнопка уже использована
         if (analysis.usedButtons.improve) {
             await ctx.answerCallbackQuery({ text: "⚠️ Уже использовано", show_alert: true });
             return;
@@ -497,7 +473,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         try {
             const improvements = await improveCurrentHair(analysis.photoUrl, analysis.result, (user.language || "EN") as Language);
 
-            // Отмечаем кнопку как использованную
             analysis.usedButtons.improve = true;
             hairAnalysisResults.set(user.id, analysis);
 
@@ -506,9 +481,8 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             const keyboard = new InlineKeyboard()
                 .text(ui.backToHairMenu, "back_menu");
 
-            // Убираем markdown символы
             const cleanImprovements = improvements.replace(/\*\*/g, '').replace(/\*/g, '');
-            
+
             await ctx.reply(`${ui.improvementTitle}\n\n${cleanImprovements}`, {
                 reply_markup: keyboard
             });
@@ -522,7 +496,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Текст для барбера
     bot.callbackQuery("hair_barber", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) return;
@@ -533,7 +506,6 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Проверяем, была ли кнопка уже использована
         if (analysis.usedButtons.barber) {
             await ctx.answerCallbackQuery({ text: "⚠️ Уже использовано", show_alert: true });
             return;
@@ -543,16 +515,15 @@ export const hairHandler = (bot: Bot<MyContext>) => {
         const loadingMsg = await ctx.reply(ui.generatingBarberText);
 
         try {
-            // Определяем пол по данным анализа (если есть) или используем нейтральный вариант
+
             const gender = analysis.gender || "male";
-            
+
             const barberText = await generateBarberInstructions(
-                analysis.suggestion, 
+                analysis.suggestion,
                 (user.language || "EN") as Language,
                 gender
             );
 
-            // Отмечаем кнопку как использованную
             analysis.usedButtons.barber = true;
             hairAnalysisResults.set(user.id, analysis);
 
@@ -561,9 +532,8 @@ export const hairHandler = (bot: Bot<MyContext>) => {
             const keyboard = new InlineKeyboard()
                 .text(ui.backToHairMenu, "back_menu");
 
-            // Убираем markdown символы
             const cleanBarberText = barberText.replace(/\*\*/g, '').replace(/\*/g, '');
-            
+
             await ctx.reply(`${ui.barberInstructionsTitle}\n\n${cleanBarberText}`, {
                 reply_markup: keyboard
             });

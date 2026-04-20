@@ -3,7 +3,6 @@ import type { MyContext } from "../middleware/autoLanguage.middleware.js";
 import { getPackageInfo } from "../services/wallet.service.js";
 import { padText } from "./utils.js";
 
-// Клавиатура выбора: купить себе или подарить
 export const getBuyForKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText(ctx.t("buy-for-self")), "buy_for_self")
@@ -30,7 +29,6 @@ export const getTopUpKeyboard = (ctx: MyContext): InlineKeyboard => {
         .text(padText(ctx.t("back")), "back_menu");
 };
 
-// Клавиатура выбора пакета для подарка
 export const getGiftPackageKeyboard = (ctx: MyContext): InlineKeyboard => {
     const pkg500 = getPackageInfo(500);
     const pkg1000 = getPackageInfo(1000);
@@ -46,7 +44,6 @@ export const getGiftPackageKeyboard = (ctx: MyContext): InlineKeyboard => {
         .text(padText(ctx.t("cancel")), "cancel_gift");
 };
 
-// Клавиатура выбора метода оплаты для подарка
 export const getGiftPaymentKeyboard = (ctx: MyContext, amount: number): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText("💳 CryptoBot (USDT)"), `gift_pay_crypto_${amount}`)

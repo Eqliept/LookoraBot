@@ -6,7 +6,7 @@ export const userIdGuard = (bot: Bot<MyContext>) => {
         if (!ctx.from || !ctx.from.id) {
             return;
         }
-        
+
         await next();
     })
 }

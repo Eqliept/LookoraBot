@@ -328,7 +328,6 @@ Isso levará alguns segundos.`,
 
 export const getStyleUI = (lang: Language) => styleUITranslations[lang] || styleUITranslations.EN!;
 
-// Получение названия категории на нужном языке
 export const getCategoryName = (category: StyleCategory, lang: Language): string => {
     const ui = getStyleUI(lang);
     const names: Record<StyleCategory, string> = {
@@ -342,7 +341,6 @@ export const getCategoryName = (category: StyleCategory, lang: Language): string
     return names[category];
 };
 
-// Получение описания категории на нужном языке
 export const getCategoryDescription = (category: StyleCategory, lang: Language): string => {
     const ui = getStyleUI(lang);
     const descriptions: Record<StyleCategory, string> = {

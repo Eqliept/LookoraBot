@@ -82,7 +82,7 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
 
         if (!validation.isValid) {
             const updatedUser = await incrementPreCheckFails(ctx.from!.id);
-            
+
             let penaltyMessage = "";
             if (updatedUser && updatedUser.preCheckFails >= PRECHECK_FREE_ATTEMPTS) {
                 const deducted = await deductCoins(ctx.from!.id, PRECHECK_PENALTY);
@@ -95,11 +95,11 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
                     penaltyMessage = `\n\n💡 ${ctx.t("precheck-warning", { remaining })}`;
                 }
             }
-            
+
             await ctx.reply(ctx.t("photo-invalid", { error: validation.error || "Фото не соответствует требованиям" }) + penaltyMessage);
             return;
         }
-        
+
         await resetPreCheckFails(ctx.from!.id);
 
         if (session.stage === "front") {
@@ -120,16 +120,16 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
 
             try {
                 const result = await analyzeAppearance(session.frontPhotoUrl!, photoUrl, user.language as any);
-                
+
                 analysisResults.set(ctx.from!.id, result);
-                
+
                 await logAnalysis(ctx.from!.id, 'appearance', APPEARANCE_COST, true);
 
                 await ctx.api.deleteMessage(ctx.chat!.id, analyzingMsg.message_id);
 
                 const s = result.scores;
                 const ui = getAppearanceUI(updatedUser?.language as any || "EN");
-                
+
                 const getCoeffText = (coeff: number): string => {
                     if (coeff >= 0.95) return `🌟 ${ui.excellent}`;
                     if (coeff >= 0.85) return `✨ ${ui.good}`;
@@ -137,7 +137,7 @@ export const appearanceHandler = (bot: Bot<MyContext>) => {
                     if (coeff >= 0.65) return `😐 ${ui.average}`;
                     return `⚠️ ${ui.low}`;
                 };
-                
+
                 const resultMessage = `✨ ${ctx.t("appearance-result-title")}
 
 🎯 ${ui.totalScore}: ${result.totalScore}/100
@@ -217,13 +217,12 @@ ${getProgressBar(s.eyebrows)}
 
 ${tips}`;
 
-        await ctx.reply(tipsMessage, { 
+        await ctx.reply(tipsMessage, {
             parse_mode: "Markdown",
-            reply_markup: new InlineKeyboard().text(ui.backToMenu, "back_menu") 
+            reply_markup: new InlineKeyboard().text(ui.backToMenu, "back_menu")
         });
     });
 
-    // Looksmaxing рейтинг
     bot.callbackQuery("get_looksmax_rating", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) {
@@ -240,19 +239,10 @@ ${tips}`;
 
         await ctx.answerCallbackQuery();
         const ui = getAppearanceUI(user.language as any);
-        
-        // Определяем лукмаксинг уровень по оценке
+
         const score = result.totalScore;
         const getLooksMaxTier = (score: number, lang: string) => {
-            // Лукмаксинг шкала:
-            // 90-100: Gigachad / Gigastacy
-            // 80-89: Chad / Stacy
-            // 70-79: Chadlite / Stacylite
-            // 60-69: HTN (High Tier Normie)
-            // 50-59: MTN (Mid Tier Normie)
-            // 40-49: LTN (Low Tier Normie)
-            // 30-39: Subhuman / Below average
-            
+
             const tiers: Record<string, { tier: string; emoji: string; desc: Record<string, string> }> = {
                 gigachad: {
                     tier: "GIGACHAD",
@@ -339,7 +329,7 @@ ${tips}`;
                     }
                 }
             };
-            
+
             let tierKey: string;
             if (score >= 90) tierKey = "gigachad";
             else if (score >= 80) tierKey = "chad";
@@ -348,7 +338,7 @@ ${tips}`;
             else if (score >= 50) tierKey = "mtn";
             else if (score >= 40) tierKey = "ltn";
             else tierKey = "subhuman";
-            
+
             const tier = tiers[tierKey]!;
             return {
                 name: tier.tier,
@@ -356,9 +346,9 @@ ${tips}`;
                 description: tier.desc[lang as keyof typeof tier.desc] || tier.desc.EN
             };
         };
-        
+
         const tier = getLooksMaxTier(score, user.language || "EN");
-        
+
         const message = `${ui.looksMaxingTitle}
 
 ${tier.emoji} ${ui.looksMaxingTier}: ${tier.name}

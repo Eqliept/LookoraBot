@@ -6,23 +6,20 @@ import { logCoinsOperation } from "../utils/logger.js";
 import { t } from "../utils/i18n.js";
 
 export const channelHandler = (bot: Bot<MyContext>) => {
-    // Показать информацию о бонусе за подписку
     bot.callbackQuery("channel_bonus", async (ctx) => {
         await ctx.answerCallbackQuery();
-        
+
         const user = await findUser(ctx.from!.id);
         if (!user) {
             await ctx.reply(ctx.t("not-registered"));
             return;
         }
 
-        // Проверяем, не получил ли пользователь уже бонус
         if (user.channelBonusClaimed) {
             await ctx.reply(ctx.t("bonus-already-claimed"));
             return;
         }
 
-        // Показываем информацию о бонусе
         const keyboard = new InlineKeyboard()
             .url(ctx.t("subscribe-channel"), CHANNEL_URL)
             .row()
@@ -36,7 +33,6 @@ export const channelHandler = (bot: Bot<MyContext>) => {
         });
     });
 
-    // Проверить подписку на канал
     bot.callbackQuery("check_channel_subscription", async (ctx) => {
         await ctx.answerCallbackQuery();
 
@@ -46,17 +42,14 @@ export const channelHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Проверяем, не получил ли пользователь уже бонус
         if (user.channelBonusClaimed) {
             await ctx.reply(ctx.t("bonus-already-claimed"));
             return;
         }
 
         try {
-            // Проверяем подписку на канал
             const member = await ctx.api.getChatMember(CHANNEL_ID, ctx.from!.id);
-            
-            // Проверяем статус участника канала
+
             const isSubscribed = ["member", "administrator", "creator"].includes(member.status);
 
             if (!isSubscribed) {
@@ -64,9 +57,8 @@ export const channelHandler = (bot: Bot<MyContext>) => {
                 return;
             }
 
-            // Начисляем бонус
             const updatedUser = await claimChannelBonus(ctx.from!.id, CHANNEL_BONUS);
-            
+
             if (updatedUser) {
                 logCoinsOperation(
                     ctx.from!.id,
@@ -87,9 +79,7 @@ export const channelHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Кнопка "Назад в меню"
     bot.callbackQuery("back_menu", async (ctx) => {
         await ctx.answerCallbackQuery();
-        // Возврат в главное меню обрабатывается в start.handler.ts
     });
 };

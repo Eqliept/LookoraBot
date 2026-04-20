@@ -4,7 +4,6 @@ import { padText } from "./utils.js";
 import type { Language } from "../types/index.js";
 import { CHANNEL_URL } from "../constants/index.js";
 
-// Переводы кнопок для незарегистрированных пользователей
 const agreementButtonTexts: Record<Language, { accept: string; read: string }> = {
     RU: { accept: "✅ Принять и продолжить", read: "📜 Прочитать соглашение" },
     EN: { accept: "✅ Accept and continue", read: "📜 Read agreement" },
@@ -14,7 +13,6 @@ const agreementButtonTexts: Record<Language, { accept: string; read: string }> =
     PT: { accept: "✅ Aceitar e continuar", read: "📜 Ler acordo" }
 };
 
-// Переводы кнопок для обязательной подписки на канал
 const subscriptionButtonTexts: Record<Language, { subscribe: string; check: string }> = {
     RU: { subscribe: "📢 Подписаться на канал", check: "✅ Я подписался" },
     EN: { subscribe: "📢 Subscribe to channel", check: "✅ I subscribed" },
@@ -24,9 +22,6 @@ const subscriptionButtonTexts: Record<Language, { subscribe: string; check: stri
     PT: { subscribe: "📢 Inscrever-se no canal", check: "✅ Me inscrevi" }
 };
 
-/**
- * Клавиатура обязательной подписки на канал (для регистрации - без ctx.t)
- */
 export const getSubscriptionKeyboardByLang = (lang: Language): InlineKeyboard => {
     const texts = subscriptionButtonTexts[lang] || subscriptionButtonTexts.EN!;
     return new InlineKeyboard()
@@ -35,9 +30,6 @@ export const getSubscriptionKeyboardByLang = (lang: Language): InlineKeyboard =>
         .text(padText(texts.check), "check_registration_subscription");
 };
 
-/**
- * Клавиатура принятия лицензионного соглашения (для авторизованных)
- */
 export const getAgreementKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText(ctx.t("accept-agreement")), "accept_agreement")
@@ -45,9 +37,6 @@ export const getAgreementKeyboard = (ctx: MyContext): InlineKeyboard => {
         .text(padText(ctx.t("read-agreement")), "read_agreement");
 };
 
-/**
- * Клавиатура принятия лицензионного соглашения (для регистрации - без ctx.t)
- */
 export const getAgreementKeyboardByLang = (lang: Language): InlineKeyboard => {
     const texts = agreementButtonTexts[lang] || agreementButtonTexts.EN!;
     return new InlineKeyboard()
@@ -56,9 +45,6 @@ export const getAgreementKeyboardByLang = (lang: Language): InlineKeyboard => {
         .text(padText(texts.read), "read_agreement");
 };
 
-/**
- * Клавиатура разделов помощи
- */
 export const getHelpMenuKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText(ctx.t("help-how-to-use")), "help_how_to_use")

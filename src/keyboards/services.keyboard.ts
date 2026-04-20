@@ -5,9 +5,6 @@ import { APPEARANCE_COST, STYLE_COST, BATTLE_COST } from "../constants/index.js"
 
 const HAIR_COST = 75;
 
-/**
- * Клавиатура выбора услуги (Начать)
- */
 export const getServicesKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText(`${ctx.t("rate-appearance")} — ${APPEARANCE_COST} 💎`), "rate_appearance")

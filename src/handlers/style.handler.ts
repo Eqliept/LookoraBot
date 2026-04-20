@@ -14,7 +14,6 @@ import * as fs from "node:fs";
 const styleSessions = new Map<number, StylePhotoSession>();
 const awaitingCustomDescription = new Set<number>();
 
-// Функция для создания прогресс-бара
 const getProgressBar = (value: number): string => {
     const filled = Math.round(value / 10);
     const empty = 10 - filled;
@@ -22,7 +21,7 @@ const getProgressBar = (value: number): string => {
 };
 
 export const styleHandler = (bot: Bot<MyContext>) => {
-    // Оценить стиль - показать выбор категории
+
     bot.callbackQuery("rate_style", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) {
@@ -46,33 +45,31 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Обработка выбора категории стиля
     const categoryCallbacks: StyleCategory[] = ["casual", "work", "date", "social", "event", "custom"];
-    
+
     for (const category of categoryCallbacks) {
         bot.callbackQuery(`style_cat_${category}`, async (ctx) => {
             const user = await findUser(ctx.from!.id);
             if (!user) return;
-            
+
             const ui = getStyleUI(user.language as any || "EN");
             const categoryName = getCategoryName(category, user.language as any || "EN");
             const categoryDesc = getCategoryDescription(category, user.language as any || "EN");
 
             if (category === "custom") {
-                // Для custom - запрашиваем описание
+
                 awaitingCustomDescription.add(ctx.from!.id);
                 await ctx.reply(ui.enterCustomDesc, {
                     reply_markup: getBackKeyboard(ctx)
                 });
             } else {
-                // Для остальных - показываем описание и запрашиваем фото
+
                 styleSessions.set(ctx.from!.id, { category });
-                
-                // Проверяем существование файла примера
+
                 const hasExample = fs.existsSync(FULL_BODY_PHOTO_EXAMPLE);
-                
+
                 const message = `${categoryName}\n\n${categoryDesc}\n\n${ui.sendFullBodyPhoto}`;
-                
+
                 if (hasExample) {
                     await ctx.replyWithPhoto(new InputFile(FULL_BODY_PHOTO_EXAMPLE), {
                         caption: message,
@@ -88,7 +85,6 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         });
     }
 
-    // Обработка текстовых сообщений (для custom описания)
     bot.on("message:text", async (ctx, next) => {
         if (!awaitingCustomDescription.has(ctx.from!.id)) {
             return next();
@@ -100,24 +96,21 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         const ui = getStyleUI(user.language as any || "EN");
         const text = ctx.message.text.trim();
 
-        // Проверяем длину описания
         if (text.length < 4 || text.length > 30) {
             await ctx.reply(ui.invalidCustomDesc);
             return;
         }
 
-        // Сохраняем сессию с custom описанием
         awaitingCustomDescription.delete(ctx.from!.id);
-        styleSessions.set(ctx.from!.id, { 
-            category: "custom", 
-            customDescription: text 
+        styleSessions.set(ctx.from!.id, {
+            category: "custom",
+            customDescription: text
         });
 
-        // Проверяем существование файла примера
         const hasExample = fs.existsSync(FULL_BODY_PHOTO_EXAMPLE);
-        
+
         const message = `✏️ ${text}\n\n${ui.sendFullBodyPhoto}`;
-        
+
         if (hasExample) {
             await ctx.replyWithPhoto(new InputFile(FULL_BODY_PHOTO_EXAMPLE), {
                 caption: message,
@@ -130,7 +123,6 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Обработка фото для стиля
     bot.on("message:photo", async (ctx, next) => {
         const session = styleSessions.get(ctx.from!.id);
         if (!session) {
@@ -142,7 +134,6 @@ export const styleHandler = (bot: Bot<MyContext>) => {
 
         const ui = getStyleUI(user.language as any || "EN");
 
-        // Получаем URL фото
         const photo = ctx.message.photo[ctx.message.photo.length - 1]!;
         const photoUrl = await getTelegramFileUrl(process.env.BOT_TOKEN!, photo.file_id);
 
@@ -151,17 +142,15 @@ export const styleHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Показываем статус проверки
         const checkingMsg = await ctx.reply(ctx.t("checking-photo"));
 
-        // Проверяем качество фото
         const validation = await validateStylePhoto(photoUrl, (user.language || "EN") as any);
 
         await ctx.api.deleteMessage(ctx.chat!.id, checkingMsg.message_id);
 
         if (!validation.isValid) {
             const updatedUser = await incrementPreCheckFails(ctx.from!.id);
-            
+
             let penaltyMessage = "";
             if (updatedUser && updatedUser.preCheckFails >= PRECHECK_FREE_ATTEMPTS) {
                 const deducted = await deductCoins(ctx.from!.id, PRECHECK_PENALTY);
@@ -174,11 +163,11 @@ export const styleHandler = (bot: Bot<MyContext>) => {
                     penaltyMessage = `\n\n💡 ${ctx.t("precheck-warning", { remaining })}`;
                 }
             }
-            
+
             await ctx.reply(ctx.t("photo-invalid", { error: validation.error || "Фото не соответствует требованиям" }) + penaltyMessage);
             return;
         }
-        
+
         await resetPreCheckFails(ctx.from!.id);
 
         styleSessions.delete(ctx.from!.id);
@@ -189,20 +178,18 @@ export const styleHandler = (bot: Bot<MyContext>) => {
         const analyzingMsg = await ctx.reply(ui.analyzingStyle);
 
         const result = await analyzeStyle(
-            photoUrl, 
-            session.category, 
+            photoUrl,
+            session.category,
             session.customDescription,
             user.language as any
         );
 
-        // Сохраняем результат
         styleAnalysisResults.set(ctx.from!.id, result);
 
         await ctx.api.deleteMessage(ctx.chat!.id, analyzingMsg.message_id);
 
         const s = result.scores;
 
-        // Получаем текст коэффициента
         const getCoeffText = (coeff: number): string => {
             if (coeff >= 0.95) return `🌟 ${ui.perfectMatch}`;
             if (coeff >= 0.8) return `✨ ${ui.goodMatch}`;
@@ -211,7 +198,6 @@ export const styleHandler = (bot: Bot<MyContext>) => {
             return `⚠️ ${ui.poorMatch}`;
         };
 
-        // Формируем сообщение с результатом
         const resultMessage = `${ui.styleResultTitle}
 
 🎯 ${ui.totalScore}: ${result.totalScore}/100
@@ -257,7 +243,6 @@ ${result.recommendations.map((r: string) => `💡 ${r}`).join("\n")}
         await ctx.reply(resultMessage, { reply_markup: keyboard });
     });
 
-    // Очистка сессии при возврате в меню
     bot.callbackQuery("back_menu", async (ctx, next) => {
         styleSessions.delete(ctx.from!.id);
         awaitingCustomDescription.delete(ctx.from!.id);

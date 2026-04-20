@@ -4,11 +4,11 @@ import type { MyContext } from "../middleware/autoLanguage.middleware.js";
 import { getLanguageKeyboard, getMainMenuKeyboard, getBackKeyboard, getHelpMenuKeyboard, getAgreementKeyboardByLang, getSubscriptionKeyboardByLang } from "../keyboards/index.js";
 import { userExists, createUser, updateUserLanguage, findUser, claimChannelBonus } from "../services/user.service.js";
 import { MAIN_IMAGE, HELP_IMAGE, CHANNEL_ID, CHANNEL_BONUS } from "../constants/index.js";
-import { 
-    getHowToUseText, 
-    getAppearanceHelpText, 
-    getStyleHelpText, 
-    getCoinsHelpText, 
+import {
+    getHowToUseText,
+    getAppearanceHelpText,
+    getStyleHelpText,
+    getCoinsHelpText,
     getAgreementText,
     getHelpMenuText,
     getAgreementInfoText,
@@ -19,28 +19,18 @@ import type { Language as TypedLanguage } from "../types/index.js";
 import { t } from "../utils/i18n.js";
 import { logger, logUserAction, logError, logCoinsOperation } from "../utils/logger.js";
 
-// Хранилище для пользователей, ожидающих принятия соглашения
 const pendingAgreement = new Map<number, Language>();
 
-/**
- * Получить язык пользователя
- */
 async function getUserLanguage(ctx: MyContext): Promise<TypedLanguage> {
     const user = await findUser(ctx.from!.id);
     return (user?.language as TypedLanguage) || "EN";
 }
 
-/**
- * Получить приветственное сообщение
- */
 export async function getWelcomeMessage(ctx: MyContext): Promise<string> {
     const lang = await getUserLanguage(ctx);
     return t('welcome', lang);
 }
 
-/**
- * Получить сообщение "с возвращением"
- */
 export async function getWelcomeBackMessage(ctx: MyContext): Promise<string> {
     const lang = await getUserLanguage(ctx);
     return t('welcome-back', lang);
@@ -53,18 +43,18 @@ export const startHandler = (bot: Bot<MyContext>) => {
             logUserAction(userId, 'start_command');
 
             const user = await findUser(userId);
-            
+
             if (user) {
-                // Пользователь существует - проверяем подписку на канал
+
                 if (!user.channelBonusClaimed) {
-                    // Не завершил регистрацию - показываем экран подписки
+
                     const lang = (user.language as TypedLanguage) || "EN";
                     await ctx.reply(t('subscription-required', lang), {
                         reply_markup: getSubscriptionKeyboardByLang(lang),
                         parse_mode: "Markdown"
                     });
                 } else {
-                    // Завершил регистрацию - показываем главное меню
+
                     await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
                         caption: await getWelcomeBackMessage(ctx),
                         reply_markup: getMainMenuKeyboard(ctx)
@@ -81,12 +71,11 @@ export const startHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Команда /help
     bot.command("help", async (ctx) => {
         try {
             const lang = await getUserLanguage(ctx);
             logUserAction(ctx.from!.id, 'help_command');
-            
+
             await ctx.replyWithPhoto(new InputFile(HELP_IMAGE), {
                 caption: getHelpMenuText(lang),
                 reply_markup: getHelpMenuKeyboard(ctx)
@@ -96,11 +85,10 @@ export const startHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Команда /language
     bot.command("language", async (ctx) => {
         try {
             logUserAction(ctx.from!.id, 'language_command');
-            
+
             await ctx.reply(ctx.t("select-language"), {
                 reply_markup: getLanguageKeyboard()
             });
@@ -118,10 +106,10 @@ export const startHandler = (bot: Bot<MyContext>) => {
             logUserAction(userId, 'language_selected', { language, isNewUser });
 
             if (isNewUser) {
-                // Для нового пользователя - показываем соглашение
+
                 pendingAgreement.set(userId, language);
                 ctx.i18n.useLocale(language.toLowerCase());
-                
+
                 await ctx.editMessageText(getAgreementInfoText(language as TypedLanguage), {
                     reply_markup: getAgreementKeyboardByLang(language as TypedLanguage)
                 });
@@ -135,7 +123,7 @@ export const startHandler = (bot: Bot<MyContext>) => {
                     reply_markup: getMainMenuKeyboard(ctx)
                 });
             }
-            
+
             await ctx.answerCallbackQuery();
         } catch (error) {
             logError(error as Error, 'language_select', { userId: ctx.from?.id });
@@ -143,25 +131,23 @@ export const startHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Прочитать лицензионное соглашение (при регистрации)
     bot.callbackQuery("read_agreement", async (ctx) => {
         const userId = ctx.from!.id;
         const pendingLang = pendingAgreement.get(userId);
         const lang = pendingLang as TypedLanguage || await getUserLanguage(ctx);
-        
+
         await ctx.reply(getAgreementText(lang), {
             reply_markup: getAgreementKeyboardByLang(lang)
         });
         await ctx.answerCallbackQuery();
     });
 
-    // Принять лицензионное соглашение
     bot.callbackQuery("accept_agreement", async (ctx) => {
         const userId = ctx.from!.id;
         const language = pendingAgreement.get(userId);
-        
+
         if (!language) {
-            // Если пользователь уже зарегистрирован
+
             if (await userExists(userId)) {
                 await ctx.answerCallbackQuery({ text: "✅" });
                 return;
@@ -170,35 +156,30 @@ export const startHandler = (bot: Bot<MyContext>) => {
             return;
         }
 
-        // Создаём пользователя (с 0 койнами и channelBonusClaimed: false)
         await createUser(userId, language);
         pendingAgreement.delete(userId);
-        
+
         ctx.i18n.useLocale(language.toLowerCase());
-        
-        // Показываем сообщение о принятии соглашения
+
         await ctx.editMessageText(getAgreementAcceptedText(language as TypedLanguage));
-        
-        // Показываем экран обязательной подписки на канал
+
         await ctx.reply(t('subscription-required', language as TypedLanguage), {
             reply_markup: getSubscriptionKeyboardByLang(language as TypedLanguage),
             parse_mode: "Markdown"
         });
-        
+
         await ctx.answerCallbackQuery();
     });
 
-    // Проверить подписку при регистрации
     bot.callbackQuery("check_registration_subscription", async (ctx) => {
         await ctx.answerCallbackQuery();
-        
+
         const user = await findUser(ctx.from!.id);
         if (!user) {
             await ctx.reply(ctx.t("not-registered"));
             return;
         }
 
-        // Если уже получил бонус - показываем меню
         if (user.channelBonusClaimed) {
             await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
                 caption: await getWelcomeMessage(ctx),
@@ -208,7 +189,7 @@ export const startHandler = (bot: Bot<MyContext>) => {
         }
 
         try {
-            // Проверяем подписку на канал
+
             const member = await ctx.api.getChatMember(CHANNEL_ID, ctx.from!.id);
             const isSubscribed = ["member", "administrator", "creator"].includes(member.status);
 
@@ -221,9 +202,8 @@ export const startHandler = (bot: Bot<MyContext>) => {
                 return;
             }
 
-            // Начисляем бонус
             const updatedUser = await claimChannelBonus(ctx.from!.id, CHANNEL_BONUS);
-            
+
             if (updatedUser) {
                 logCoinsOperation(
                     ctx.from!.id,
@@ -238,7 +218,6 @@ export const startHandler = (bot: Bot<MyContext>) => {
                     { parse_mode: "Markdown" }
                 );
 
-                // Показываем главное меню
                 await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
                     caption: await getWelcomeMessage(ctx),
                     reply_markup: getMainMenuKeyboard(ctx)
@@ -266,7 +245,6 @@ export const startHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Разделы помощи
     bot.callbackQuery("help_how_to_use", async (ctx) => {
         try {
             const lang = await getUserLanguage(ctx);

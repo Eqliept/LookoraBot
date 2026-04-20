@@ -1,11 +1,6 @@
 import type { Language } from "../types/index.js";
 import { t } from "../utils/i18n.js";
 
-/**
- * Централизованная система переводов для раздела помощи
- * Все функции теперь используют общую систему переводов из utils/i18n.ts
- */
-
 export const getHowToUseText = (lang: Language): string => {
     return t('help-how-to-use-text', lang);
 };

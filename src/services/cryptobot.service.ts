@@ -40,7 +40,7 @@ export const createCryptoBotInvoice = async (params: CreateInvoiceParams): Promi
         });
 
         const data = await response.json();
-        
+
         if (data.ok) {
             return data.result as CryptoBotInvoice;
         } else {
@@ -65,7 +65,7 @@ export const checkInvoiceStatus = async (invoiceId: number): Promise<string | nu
         });
 
         const data = await response.json();
-        
+
         if (data.ok && data.result.items.length > 0) {
             return data.result.items[0].status;
         }
@@ -85,7 +85,7 @@ export const getCurrencies = async (): Promise<string[]> => {
         });
 
         const data = await response.json();
-        
+
         if (data.ok) {
             return data.result.map((c: any) => c.code);
         }

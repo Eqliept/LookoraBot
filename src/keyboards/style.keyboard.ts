@@ -2,9 +2,6 @@ import { InlineKeyboard } from "grammy";
 import type { MyContext } from "../middleware/autoLanguage.middleware.js";
 import { padText } from "./utils.js";
 
-/**
- * Клавиатура выбора категории стиля
- */
 export const getStyleCategoryKeyboard = (ctx: MyContext): InlineKeyboard => {
     return new InlineKeyboard()
         .text(padText(ctx.t("style-casual")), "style_cat_casual")

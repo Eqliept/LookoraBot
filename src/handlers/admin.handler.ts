@@ -8,7 +8,7 @@ const awaitingGiveCoins = new Map<number, { step: "user_id" | "amount"; targetUs
 const awaitingTakeCoins = new Map<number, { step: "user_id" | "amount"; targetUserId?: number }>();
 
 export const adminHandler = (bot: Bot<MyContext>) => {
-    // 💰 Выдать монеты пользователю
+
     bot.command("give", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -16,16 +16,16 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const args = ctx.message?.text?.split(" ").slice(1) || [];
-        
+
         if (args.length === 2) {
             const targetId = parseInt(args[0]!);
             const amount = parseInt(args[1]!);
-            
+
             if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
                 await ctx.reply("❌ Неверный формат. Используйте: /give <telegram_id> <количество>");
                 return;
             }
-            
+
             await giveCoins(ctx, targetId, amount);
         } else {
             awaitingGiveCoins.set(ctx.from!.id, { step: "user_id" });
@@ -33,7 +33,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // 🔻 Забрать монеты у пользователя
     bot.command("take", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -41,16 +40,16 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const args = ctx.message?.text?.split(" ").slice(1) || [];
-        
+
         if (args.length === 2) {
             const targetId = parseInt(args[0]!);
             const amount = parseInt(args[1]!);
-            
+
             if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
                 await ctx.reply("❌ Неверный формат. Используйте: /take <telegram_id> <количество>");
                 return;
             }
-            
+
             await takeCoins(ctx, targetId, amount);
         } else {
             awaitingTakeCoins.set(ctx.from!.id, { step: "user_id" });
@@ -58,7 +57,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // 📊 Общая статистика
     bot.command("stats", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -66,18 +64,18 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const { prisma } = await import("../services/database.service.js");
-        
+
         const totalUsers = await prisma.user.count();
         const totalCoins = await prisma.user.aggregate({
             _sum: { coins: true }
         });
         const totalPurchases = await prisma.purchase.count();
-        
+
         const usersWithCoins = await prisma.user.findMany({
             where: { coins: { gt: 0 } }
         });
-        
-        const avgCoins = usersWithCoins.length > 0 
+
+        const avgCoins = usersWithCoins.length > 0
             ? Math.round((totalCoins._sum.coins ?? 0) / usersWithCoins.length)
             : 0;
 
@@ -97,7 +95,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // 👥 Список всех пользователей
     bot.command("users", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -105,7 +102,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const { prisma } = await import("../services/database.service.js");
-        
+
         const totalUsers = await prisma.user.count();
         const totalCoins = await prisma.user.aggregate({
             _sum: { coins: true }
@@ -119,7 +116,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // 🏆 Топ самых богатых пользователей
     bot.command("rich", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -127,7 +123,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const { prisma } = await import("../services/database.service.js");
-        
+
         const richestUsers = await prisma.user.findMany({
             orderBy: { coins: "desc" },
             take: 20,
@@ -149,7 +145,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // 🔍 Информация о пользователе
     bot.command("user", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -157,7 +152,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const args = ctx.message?.text?.split(" ").slice(1) || [];
-        
+
         if (args.length !== 1) {
             await ctx.reply("❌ Используйте: /user <telegram_id>");
             return;
@@ -170,7 +165,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const user = await findUser(targetId);
-        
+
         if (!user) {
             await ctx.reply(`❌ Пользователь с ID ${targetId} не найден.`);
             return;
@@ -203,7 +198,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // 📜 История покупок
     bot.command("purchases", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -211,7 +205,7 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         }
 
         const { prisma } = await import("../services/database.service.js");
-        
+
         const recentPurchases = await prisma.purchase.findMany({
             orderBy: { createdAt: "desc" },
             take: 10,
@@ -236,7 +230,6 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // 🔧 Команды админа
     bot.command("admin", async (ctx) => {
         if (ctx.from!.id !== ADMIN_ID) {
             await ctx.reply("⛔ Эта команда доступна только администратору.");
@@ -264,13 +257,12 @@ export const adminHandler = (bot: Bot<MyContext>) => {
         await ctx.reply(message, { parse_mode: "Markdown" });
     });
 
-    // Обработка ввода для /give
     bot.on("message:text", async (ctx, next) => {
         const giveState = awaitingGiveCoins.get(ctx.from!.id);
         if (giveState) {
             if (giveState.step === "user_id") {
                 const targetId = parseInt(ctx.message.text);
-                
+
                 if (isNaN(targetId)) {
                     await ctx.reply("❌ Неверный ID. Введите числовой Telegram ID:");
                     return;
@@ -279,12 +271,12 @@ export const adminHandler = (bot: Bot<MyContext>) => {
                 giveState.targetUserId = targetId;
                 giveState.step = "amount";
                 awaitingGiveCoins.set(ctx.from!.id, giveState);
-                
+
                 await ctx.reply(`✅ ID: ${targetId}\n\n💰 Теперь введите количество монет для выдачи:`);
                 return;
             } else if (giveState.step === "amount" && giveState.targetUserId) {
                 const amount = parseInt(ctx.message.text);
-                
+
                 if (isNaN(amount) || amount <= 0) {
                     await ctx.reply("❌ Неверное количество. Введите положительное число:");
                     return;
@@ -296,12 +288,11 @@ export const adminHandler = (bot: Bot<MyContext>) => {
             }
         }
 
-        // Обработка ввода для /take
         const takeState = awaitingTakeCoins.get(ctx.from!.id);
         if (takeState) {
             if (takeState.step === "user_id") {
                 const targetId = parseInt(ctx.message.text);
-                
+
                 if (isNaN(targetId)) {
                     await ctx.reply("❌ Неверный ID. Введите числовой Telegram ID:");
                     return;
@@ -310,12 +301,12 @@ export const adminHandler = (bot: Bot<MyContext>) => {
                 takeState.targetUserId = targetId;
                 takeState.step = "amount";
                 awaitingTakeCoins.set(ctx.from!.id, takeState);
-                
+
                 await ctx.reply(`✅ ID: ${targetId}\n\n💸 Теперь введите количество монет для списания:`);
                 return;
             } else if (takeState.step === "amount" && takeState.targetUserId) {
                 const amount = parseInt(ctx.message.text);
-                
+
                 if (isNaN(amount) || amount <= 0) {
                     await ctx.reply("❌ Неверное количество. Введите положительное число:");
                     return;
@@ -333,24 +324,23 @@ export const adminHandler = (bot: Bot<MyContext>) => {
 
 async function giveCoins(ctx: MyContext, targetTelegramId: number, amount: number) {
     const targetUser = await findUser(targetTelegramId);
-    
+
     if (!targetUser) {
         await ctx.reply(`❌ Пользователь с ID ${targetTelegramId} не найден в базе данных.\n\nПользователь должен сначала запустить бота командой /start`);
         return;
     }
 
     const updatedUser = await addCoinsToUser(targetTelegramId, amount);
-    
+
     if (updatedUser) {
         logUserAction(targetTelegramId, 'admin_give_coins', { amount, admin: ctx.from!.id });
-        
+
         await ctx.reply(`✅ **МОНЕТЫ ВЫДАНЫ**
 
 👤 Пользователь: \`${targetTelegramId}\`
 💰 Выдано: +${amount} монет
 💎 Новый баланс: **${updatedUser.coins}** монет`, { parse_mode: "Markdown" });
 
-        // Уведомляем пользователя
         if (targetTelegramId !== ctx.from!.id) {
             try {
                 await ctx.api.sendMessage(
@@ -368,7 +358,7 @@ async function giveCoins(ctx: MyContext, targetTelegramId: number, amount: numbe
 
 async function takeCoins(ctx: MyContext, targetTelegramId: number, amount: number) {
     const targetUser = await findUser(targetTelegramId);
-    
+
     if (!targetUser) {
         await ctx.reply(`❌ Пользователь с ID ${targetTelegramId} не найден в базе данных.`);
         return;
@@ -380,17 +370,16 @@ async function takeCoins(ctx: MyContext, targetTelegramId: number, amount: numbe
     }
 
     const updatedUser = await removeCoinsFromUser(targetTelegramId, amount);
-    
+
     if (updatedUser) {
         logUserAction(targetTelegramId, 'admin_take_coins', { amount, admin: ctx.from!.id });
-        
+
         await ctx.reply(`✅ **МОНЕТЫ СПИСАНЫ**
 
 👤 Пользователь: \`${targetTelegramId}\`
 💸 Списано: -${amount} монет
 💎 Новый баланс: **${updatedUser.coins}** монет`, { parse_mode: "Markdown" });
 
-        // Уведомляем пользователя
         try {
             await ctx.api.sendMessage(
                 targetTelegramId,
@@ -404,7 +393,6 @@ async function takeCoins(ctx: MyContext, targetTelegramId: number, amount: numbe
     }
 }
 
-// Функция для уведомления админа о покупке (экспортируем для использования в wallet handler)
 export async function notifyAdminAboutPurchase(
     bot: Bot<MyContext>,
     userId: number,
@@ -415,7 +403,7 @@ export async function notifyAdminAboutPurchase(
     try {
         const user = await findUser(userId);
         const username = user ? `ID: ${user.telegramId}` : `ID: ${userId}`;
-        
+
         const message = `🔔 **НОВАЯ ПОКУПКА!**
 
 👤 **Пользователь:** \`${username}\`
@@ -425,7 +413,7 @@ export async function notifyAdminAboutPurchase(
 📅 **Дата:** ${new Date().toLocaleString('ru')}`;
 
         await bot.api.sendMessage(ADMIN_ID, message, { parse_mode: "Markdown" });
-        
+
         logger.info('Admin notified about purchase', { userId, amount, price, method });
     } catch (error) {
         logger.error('Failed to notify admin about purchase');

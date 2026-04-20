@@ -4,7 +4,6 @@ import type { MyContext } from "./middleware/autoLanguage.middleware.js";
 import type { Language } from "./types/index.js";
 import { ADMIN_ID } from "./constants/index.js";
 
-// Команды бота для разных языков
 const commandTranslations: Record<Language, { start: string; wallet: string; help: string; language: string }> = {
     RU: {
         start: "🚀 Запустить бота",
@@ -44,7 +43,6 @@ const commandTranslations: Record<Language, { start: string; wallet: string; hel
     }
 };
 
-// Маппинг Language на language_code Telegram
 const langToCode: Record<Language, LanguageCode> = {
     RU: "ru",
     EN: "en",
@@ -54,14 +52,11 @@ const langToCode: Record<Language, LanguageCode> = {
     UA: "uk"
 };
 
-/**
- * Настройка команд бота (меню)
- */
 export async function setupBotCommands(bot: Bot<MyContext>) {
-    // Устанавливаем команды для каждого языка
+
     for (const [lang, translations] of Object.entries(commandTranslations)) {
         const languageCode = langToCode[lang as Language];
-        
+
         await bot.api.setMyCommands(
             [
                 { command: "start", description: translations.start },
@@ -73,7 +68,6 @@ export async function setupBotCommands(bot: Bot<MyContext>) {
         );
     }
 
-    // Устанавливаем команды по умолчанию (английский)
     await bot.api.setMyCommands([
         { command: "start", description: commandTranslations.EN!.start },
         { command: "wallet", description: commandTranslations.EN!.wallet },
@@ -81,7 +75,6 @@ export async function setupBotCommands(bot: Bot<MyContext>) {
         { command: "language", description: commandTranslations.EN!.language }
     ]);
 
-    // Устанавливаем расширенное меню для админа
     await bot.api.setMyCommands([
         { command: "start", description: "🚀 Start the bot" },
         { command: "wallet", description: "💰 My balance" },
@@ -94,7 +87,7 @@ export async function setupBotCommands(bot: Bot<MyContext>) {
         { command: "rich", description: "🏆 Top 10 richest" },
         { command: "user", description: "👤 User info" },
         { command: "purchases", description: "🛒 Recent purchases" }
-    ], { 
-        scope: { type: "chat", chat_id: ADMIN_ID } 
+    ], {
+        scope: { type: "chat", chat_id: ADMIN_ID }
     });
 }

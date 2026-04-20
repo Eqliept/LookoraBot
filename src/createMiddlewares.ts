@@ -14,13 +14,12 @@ const ua = require("./languages/ua.json");
 function jsonToFluent(obj: Record<string, string>): string {
     return Object.entries(obj)
         .map(([key, value]) => {
-            // В JSON после парсинга \n уже становится реальным переносом строки
-            // Для Fluent нужно добавить отступ для многострочных значений
+
             const lines = value.split('\n');
             if (lines.length === 1) {
                 return `${key} = ${value}`;
             }
-            // Многострочное значение: первая строка после =, остальные с отступом
+
             const formattedValue = lines.join('\n    ');
             return `${key} = ${formattedValue}`;
         })

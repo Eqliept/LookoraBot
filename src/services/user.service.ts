@@ -74,7 +74,7 @@ export const deductCoins = async (telegramId: number, amount: number): Promise<b
     try {
         const user = await findUser(telegramId);
         if (!user || user.coins < amount) return false;
-        
+
         await prisma.user.update({
             where: { telegramId: String(telegramId) },
             data: { coins: { decrement: amount } }
@@ -89,7 +89,7 @@ export const removeCoinsFromUser = async (telegramId: number, amount: number): P
     try {
         const user = await findUser(telegramId);
         if (!user || user.coins < amount) return null;
-        
+
         return await prisma.user.update({
             where: { telegramId: String(telegramId) },
             data: { coins: { decrement: amount } }
@@ -103,12 +103,12 @@ export const claimChannelBonus = async (telegramId: number, bonusAmount: number)
     try {
         const user = await findUser(telegramId);
         if (!user || user.channelBonusClaimed) return null;
-        
+
         return await prisma.user.update({
             where: { telegramId: String(telegramId) },
-            data: { 
+            data: {
                 coins: { increment: bonusAmount },
-                channelBonusClaimed: true 
+                channelBonusClaimed: true
             }
         });
     } catch {
@@ -117,14 +117,14 @@ export const claimChannelBonus = async (telegramId: number, bonusAmount: number)
 };
 
 export const createPurchase = async (
-    telegramId: number, 
-    coins: number, 
+    telegramId: number,
+    coins: number,
     amountUsd: number
 ): Promise<boolean> => {
     try {
         const user = await findUser(telegramId);
         if (!user) return false;
-        
+
         await prisma.purchase.create({
             data: {
                 userId: user.id,

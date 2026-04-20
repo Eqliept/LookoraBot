@@ -20,7 +20,7 @@ export interface BattleUITranslations {
     backButton: string;
     photoLoadError: string;
     photoInvalid: string;
-    // Параметры
+
     eyes: string;
     nose: string;
     lips: string;
@@ -418,5 +418,5 @@ Envie uma foto frontal do rosto.
     }
 };
 
-export const getBattleUI = (lang: Language): BattleUITranslations => 
+export const getBattleUI = (lang: Language): BattleUITranslations =>
     battleUITranslations[lang] || battleUITranslations.EN;

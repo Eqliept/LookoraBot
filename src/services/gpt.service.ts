@@ -6,20 +6,15 @@ import { notifyAdminAboutError } from "../utils/logger.js";
 const OPENAI_API_KEY = process.env.OPEN_API!;
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-// Хранилище результатов для генерации советов
 export const analysisResults = new Map<number, AppearanceAnalysisResult>();
 
-/**
- * Проверка качества фото через GPT Vision
- * Используем gpt-4o-mini как самую дешёвую модель с поддержкой Vision
- */
 export const validatePhoto = async (
     photoUrl: string,
     type: "front" | "side",
     lang: Language = "EN"
 ): Promise<PhotoValidationResult> => {
     const t = getGPTTranslation(lang);
-    
+
     const prompt = type === "front"
         ? `Check if this FRONT face photo is suitable for appearance analysis.
 
@@ -70,8 +65,7 @@ If there are serious problems, answer ONLY JSON (error message ${t.errorLanguage
 
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || "";
-        
-        // Парсим JSON из ответа
+
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const result = JSON.parse(jsonMatch[0]);
@@ -80,29 +74,25 @@ If there are serious problems, answer ONLY JSON (error message ${t.errorLanguage
                 error: result.error || undefined
             };
         }
-        
+
         return { isValid: true };
     } catch (error) {
-        return { isValid: true }; // При ошибке пропускаем
+        return { isValid: true };
     }
 };
 
-/**
- * Анализ внешности через GPT Vision
- * Возвращает детализированные оценки по категориям
- */
 export const analyzeAppearance = async (
     frontPhotoUrl: string,
     sidePhotoUrl: string,
     lang: Language = "EN"
 ): Promise<AppearanceAnalysisResult> => {
     const t = getGPTTranslation(lang);
-    
+
     const prompt = `Analyze the person's appearance in these two photos (front and side/profile).
 
 Rate EACH parameter on a scale from 30 to 100, where:
 30-50: below average
-50-65: average  
+50-65: average
 65-80: above average
 80-90: very attractive
 90-100: exceptional
@@ -166,27 +156,25 @@ Answer ONLY in JSON format:
         });
 
         const data = await response.json();
-        
+
         if (data.error) {
             return getDefaultResult();
         }
-        
+
         const content = data.choices?.[0]?.message?.content || "";
-        
+
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const raw = JSON.parse(jsonMatch[0]);
-            
-            // Получаем коэффициент общего впечатления (0.5-1.0)
+
             const overallCoefficient = Math.min(1.0, Math.max(0.5, Number(raw.overallImpression) || 1.0));
-            
-            // Нормализуем оценки (мин 30, макс 100) и применяем коэффициент
+
             const clampAndApply = (val: number) => {
                 const base = Math.min(100, Math.max(30, Number(val) || 50));
-                // Применяем коэффициент, но не опускаем ниже 30
+
                 return Math.max(30, Math.round(base * overallCoefficient));
             };
-            
+
             const scores: AppearanceScores = {
                 eyes: clampAndApply(raw.eyes),
                 nose: clampAndApply(raw.nose),
@@ -197,23 +185,21 @@ Answer ONLY in JSON format:
                 symmetry: clampAndApply(raw.symmetry),
                 eyebrows: clampAndApply(raw.eyebrows)
             };
-            
-            // Вычисляем общую оценку как среднее
+
             const values = Object.values(scores) as number[];
             const totalScore = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-            
-            // Находим слабые места (ниже 60) - используем переведённые метки
+
             const weakPoints: string[] = [];
-            
+
             for (const [key, value] of Object.entries(scores)) {
                 if ((value as number) < 60) {
                     weakPoints.push(t.labels[key as keyof AppearanceScores]);
                 }
             }
-            
+
             return { scores, totalScore, overallCoefficient, weakPoints };
         }
-        
+
         return getDefaultResult();
     } catch (error) {
         return getDefaultResult();
@@ -230,27 +216,21 @@ const getDefaultResult = (): AppearanceAnalysisResult => ({
     weakPoints: []
 });
 
-/**
- * Генерация советов по улучшению на основе результатов анализа
- */
 export const getImprovementTips = async (
     result: AppearanceAnalysisResult,
     lang: Language = "EN"
 ): Promise<string> => {
     const t = getGPTTranslation(lang);
-    
-    // Сортируем параметры по оценке (от худших к лучшим)
+
     const sortedScores = Object.entries(result.scores)
         .map(([key, value]) => {
             return { key, label: t.labels[key as keyof AppearanceScores], score: value as number };
         })
         .sort((a, b) => a.score - b.score);
-    
-    // Берём 3 самых слабых места
+
     const weakest = sortedScores.slice(0, 3);
     const weakestText = weakest.map(w => `${w.label}: ${w.score}/100`).join(", ");
 
-    // Промпты на разных языках
     const prompts: Record<Language, string> = {
         RU: `Дай советы по улучшению внешности человека.
 
@@ -334,26 +314,23 @@ Formato: lista numerada em português, breve.`,
         });
 
         const data = await response.json();
-        
+
         if (data.error) {
-            return lang === "RU" ? "Не удалось сгенерировать советы." : 
+            return lang === "RU" ? "Не удалось сгенерировать советы." :
                    lang === "UA" ? "Не вдалося згенерувати поради." :
                    "Could not generate tips.";
         }
-        
-        return data.choices?.[0]?.message?.content || 
-               (lang === "RU" ? "Советы недоступны" : 
+
+        return data.choices?.[0]?.message?.content ||
+               (lang === "RU" ? "Советы недоступны" :
                 lang === "UA" ? "Поради недоступні" : "Tips unavailable");
     } catch (error) {
-        return lang === "RU" ? "Ошибка при генерации советов" : 
+        return lang === "RU" ? "Ошибка при генерации советов" :
                lang === "UA" ? "Помилка при генерації порад" :
                "Error generating tips";
     }
 };
 
-/**
- * Получить URL файла из Telegram
- */
 export const getTelegramFileUrl = async (
     botToken: string,
     fileId: string
@@ -361,7 +338,7 @@ export const getTelegramFileUrl = async (
     try {
         const response = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
         const data = await response.json();
-        
+
         if (data.ok && data.result.file_path) {
             return `https://api.telegram.org/file/bot${botToken}/${data.result.file_path}`;
         }
@@ -371,18 +348,14 @@ export const getTelegramFileUrl = async (
     }
 };
 
-// Хранилище результатов стиля
 export const styleAnalysisResults = new Map<number, StyleAnalysisResult>();
 
-/**
- * Валидация фото для анализа стиля (полный рост)
- */
 export const validateStylePhoto = async (
     photoUrl: string,
     lang: Language = "EN"
 ): Promise<PhotoValidationResult> => {
     const t = getGPTTranslation(lang);
-    
+
     const prompt = `Check if this FULL BODY photo is suitable for style analysis.
 
 Check:
@@ -421,7 +394,7 @@ If there are serious problems, answer ONLY JSON (error message ${t.errorLanguage
 
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || "";
-        
+
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const result = JSON.parse(jsonMatch[0]);
@@ -430,16 +403,13 @@ If there are serious problems, answer ONLY JSON (error message ${t.errorLanguage
                 error: result.error || undefined
             };
         }
-        
+
         return { isValid: true };
     } catch (error) {
         return { isValid: true };
     }
 };
 
-/**
- * Анализ стиля через GPT Vision
- */
 export const analyzeStyle = async (
     photoUrl: string,
     category: StyleCategory,
@@ -529,22 +499,21 @@ Answer ONLY in JSON format:
         });
 
         const data = await response.json();
-        
+
         if (data.error) {
             return getDefaultStyleResult(lang);
         }
-        
+
         const content = data.choices?.[0]?.message?.content || "";
-        
+
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const raw = JSON.parse(jsonMatch[0]);
-            
+
             const clamp = (val: number) => Math.min(100, Math.max(30, Number(val) || 50));
-            
-            // Получаем коэффициент соответствия контексту (0.3-1.0)
+
             const overallCoefficient = Math.min(1.0, Math.max(0.3, Number(raw.contextCoefficient) || 0.7));
-            
+
             const scores: StyleScores = {
                 colorHarmony: clamp(raw.colorHarmony),
                 fit: clamp(raw.fit),
@@ -553,12 +522,11 @@ Answer ONLY in JSON format:
                 grooming: clamp(raw.grooming),
                 contextMatch: clamp(raw.contextMatch)
             };
-            
-            // Применяем коэффициент к общей оценке
+
             const values = Object.values(scores) as number[];
             const baseScore = values.reduce((a, b) => a + b, 0) / values.length;
             const totalScore = Math.round(baseScore * overallCoefficient);
-            
+
             return {
                 scores,
                 totalScore,
@@ -568,7 +536,7 @@ Answer ONLY in JSON format:
                 recommendations: raw.recommendations || []
             };
         }
-        
+
         return getDefaultStyleResult(lang);
     } catch (error) {
         return getDefaultStyleResult(lang);
@@ -584,9 +552,9 @@ const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
         PT: { strength: "Análise indisponível", improvement: "Tente outra foto", recommendation: "Envie uma foto clara" },
         UA: { strength: "Аналіз недоступний", improvement: "Спробуйте інше фото", recommendation: "Завантажте чітке фото" }
     };
-    
+
     const msg = defaultMessages[lang] || defaultMessages.EN;
-    
+
     return {
         scores: {
             colorHarmony: 50,
@@ -604,15 +572,12 @@ const getDefaultStyleResult = (lang: Language): StyleAnalysisResult => {
     };
 };
 
-/**
- * Анализ волос и определение формы лица
- */
 export const analyzeHair = async (
     photoUrl: string,
     lang: Language = "EN"
 ): Promise<HairAnalysisResult & { gender?: "male" | "female" }> => {
     const t = getGPTTranslation(lang);
-    
+
     const prompt = `You are a professional hair analyst. Analyze the hair and face shape in this photo.
 
 Rate each parameter on a scale from 30 to 100:
@@ -687,17 +652,15 @@ JSON format:
             throw new Error("Empty response from OpenAI");
         }
 
-        // Извлекаем JSON из ответа (может содержать текст до/после JSON)
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("No JSON found in response");
         }
 
         const parsed = JSON.parse(jsonMatch[0]);
-        
-        // Нормализуем оценки (30-100)
+
         const clamp = (val: number) => Math.min(100, Math.max(30, Number(val) || 50));
-        
+
         const scores: HairScores = {
             health: clamp(parsed.scores?.health),
             volume: clamp(parsed.scores?.volume),
@@ -706,10 +669,9 @@ JSON format:
             styling: clamp(parsed.scores?.styling),
             maintenance: clamp(parsed.scores?.maintenance)
         };
-        
-        // Вычисляем общую оценку
+
         const totalScore = Math.round(
-            (scores.health + scores.volume + scores.texture + 
+            (scores.health + scores.volume + scores.texture +
              scores.color + scores.styling + scores.maintenance) / 6
         );
 
@@ -724,7 +686,7 @@ JSON format:
         };
     } catch (error) {
         await notifyAdminAboutError(error as Error, 'hair analysis', 0);
-        
+
         return {
             scores: {
                 health: 50,
@@ -743,9 +705,6 @@ JSON format:
     }
 };
 
-/**
- * Подбор прически на основе анализа
- */
 export const suggestHairstyle = async (
     photoUrl: string,
     hairAnalysis: HairAnalysisResult,
@@ -806,8 +765,7 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
 
         const data = await response.json();
         const result = data.choices[0]?.message?.content?.trim() || "Unable to generate hairstyle suggestion";
-        
-        // Убираем markdown если остался
+
         return result.replace(/\*\*/g, '').replace(/\*/g, '');
     } catch (error) {
         await notifyAdminAboutError(error as Error, 'hairstyle suggestion', 0);
@@ -815,9 +773,6 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
     }
 };
 
-/**
- * Советы по улучшению текущей прически
- */
 export const improveCurrentHair = async (
     photoUrl: string,
     hairAnalysis: HairAnalysisResult,
@@ -871,8 +826,7 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
 
         const data = await response.json();
         const result = data.choices[0]?.message?.content?.trim() || "Unable to generate improvement tips";
-        
-        // Убираем markdown если остался
+
         return result.replace(/\*\*/g, '').replace(/\*/g, '');
     } catch (error) {
         await notifyAdminAboutError(error as Error, 'hair improvement tips', 0);
@@ -880,9 +834,6 @@ Response language: ${lang === "RU" ? "Russian" : lang === "UA" ? "Ukrainian" : l
     }
 };
 
-/**
- * Генерация инструкций для барбера
- */
 export const generateBarberInstructions = async (
     hairstyleSuggestion: string,
     lang: Language = "EN",
@@ -931,8 +882,8 @@ export const generateBarberInstructions = async (
 
     const prompt = `${genderInfo}
 
-Преобразуйте эту рекомендацию в текст-запрос от лица клиента для барбера/парикмахера. 
-Начните с "${startPhrase}..." и опишите желаемую прическу простым языком. 
+Преобразуйте эту рекомендацию в текст-запрос от лица клиента для барбера/парикмахера.
+Начните с "${startPhrase}..." и опишите желаемую прическу простым языком.
 Будьте конкретны но кратки. Напишите так, как будто вы лично просите барбера.
 
 Рекомендуемая прическа:
@@ -967,8 +918,7 @@ ${hairstyleSuggestion}
 
         const data = await response.json();
         const result = data.choices[0]?.message?.content?.trim() || "Unable to generate barber instructions";
-        
-        // Убираем markdown если остался
+
         return result.replace(/\*\*/g, '').replace(/\*/g, '');
     } catch (error) {
         await notifyAdminAboutError(error as Error, 'barber instructions generation', 0);
@@ -976,9 +926,6 @@ ${hairstyleSuggestion}
     }
 };
 
-/**
- * Анализ баттла внешности - сравнение двух человек
- */
 export const analyzeBattle = async (
     player1FrontUrl: string,
     player1SideUrl: string,
@@ -987,7 +934,7 @@ export const analyzeBattle = async (
     lang: Language = "EN"
 ): Promise<BattleAnalysisResult> => {
     const t = getGPTTranslation(lang);
-    
+
     const verdictLang: Record<Language, string> = {
         RU: "на русском языке",
         EN: "in English",
@@ -996,7 +943,7 @@ export const analyzeBattle = async (
         PT: "em português",
         UA: "українською мовою"
     };
-    
+
     const prompt = `You are judging an APPEARANCE BATTLE between two people.
 
 Analyze photos of PERSON 1 (front and side) and PERSON 2 (front and side).
@@ -1075,25 +1022,25 @@ Answer ONLY in JSON:
         });
 
         const data = await response.json();
-        
+
         if (data.error) {
             return getDefaultBattleResult();
         }
-        
+
         const content = data.choices?.[0]?.message?.content || "";
-        
+
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const raw = JSON.parse(jsonMatch[0]);
-            
+
             const processPlayer = (playerData: any): BattlePlayerResult => {
                 const overallCoefficient = Math.min(1.0, Math.max(0.5, Number(playerData.overallImpression) || 1.0));
-                
+
                 const clampAndApply = (val: number) => {
                     const base = Math.min(100, Math.max(30, Number(val) || 50));
                     return Math.max(30, Math.round(base * overallCoefficient));
                 };
-                
+
                 const scores: AppearanceScores = {
                     eyes: clampAndApply(playerData.eyes),
                     nose: clampAndApply(playerData.nose),
@@ -1104,20 +1051,20 @@ Answer ONLY in JSON:
                     symmetry: clampAndApply(playerData.symmetry),
                     eyebrows: clampAndApply(playerData.eyebrows)
                 };
-                
+
                 const values = Object.values(scores) as number[];
                 const totalScore = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-                
+
                 return { scores, totalScore, overallCoefficient };
             };
-            
+
             return {
                 player1: processPlayer(raw.player1),
                 player2: processPlayer(raw.player2),
                 verdict: raw.verdict || ""
             };
         }
-        
+
         return getDefaultBattleResult();
     } catch (error) {
         await notifyAdminAboutError(error as Error, 'battle analysis', 0);

@@ -7,14 +7,12 @@ import { ADMIN_ID } from "../constants/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Глобальная ссылка на бота для уведомлений админа
 let botInstance: any = null;
 
 export const setBotInstance = (bot: any) => {
     botInstance = bot;
 };
 
-// Определяем уровни логирования
 const levels = {
     error: 0,
     warn: 1,
@@ -23,7 +21,6 @@ const levels = {
     debug: 4,
 };
 
-// Цвета для консоли
 const colors = {
     error: 'red',
     warn: 'yellow',
@@ -34,7 +31,6 @@ const colors = {
 
 winston.addColors(colors);
 
-// Формат для консоли
 const consoleFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.colorize({ all: true }),
@@ -43,39 +39,35 @@ const consoleFormat = winston.format.combine(
     )
 );
 
-// Формат для файлов
 const fileFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.json()
 );
 
-// Создаем транспорты
 const transports: winston.transport[] = [
-    // Консоль
+
     new winston.transports.Console({
         format: consoleFormat,
     }),
-    // Файл для ошибок
+
     new winston.transports.File({
         filename: path.join(__dirname, '../../logs/error.log'),
         level: 'error',
         format: fileFormat,
     }),
-    // Файл для всех логов
+
     new winston.transports.File({
         filename: path.join(__dirname, '../../logs/combined.log'),
         format: fileFormat,
     }),
 ];
 
-// Создаем логгер
 export const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     levels,
     transports,
 });
 
-// Вспомогательные функции для структурированного логирования
 export const logUserAction = (
     userId: number,
     action: string,
@@ -169,7 +161,6 @@ export const logCoinsOperation = (
     });
 };
 
-// Уведомление админа о критических ошибках
 export const notifyAdminAboutError = async (
     error: Error,
     context: string,
@@ -218,7 +209,6 @@ export const logAPICall = (
     });
 };
 
-// Метрики для мониторинга
 class MetricsCollector {
     private metrics = {
         totalRequests: 0,
@@ -258,7 +248,7 @@ class MetricsCollector {
         return {
             ...this.metrics,
             totalUniqueUsers: this.metrics.totalUsers.size,
-            averageResponseTime: 
+            averageResponseTime:
                 this.metrics.responseTimeCount > 0
                     ? this.metrics.responseTimeSum / this.metrics.responseTimeCount
                     : 0,
@@ -285,13 +275,11 @@ class MetricsCollector {
 
 export const metrics = new MetricsCollector();
 
-// Периодическое логирование метрик
 setInterval(() => {
     const currentMetrics = metrics.getMetrics();
     logger.info('📊 Metrics report', currentMetrics);
-}, 30 * 60 * 1000); // Каждые 30 минут
+}, 30 * 60 * 1000);
 
-// Мониторинг производительности
 export class PerformanceMonitor {
     private timers = new Map<string, number>();
 
@@ -308,9 +296,9 @@ export class PerformanceMonitor {
 
         const duration = Date.now() - startTime;
         this.timers.delete(label);
-        
+
         metrics.recordResponseTime(duration);
-        
+
         if (duration > 1000) {
             logger.warn(`Slow operation: ${label} took ${duration}ms`);
         }

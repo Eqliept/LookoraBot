@@ -13,7 +13,6 @@ import type { Language } from "../types/index.js";
 const awaitingCustomAmount = new Set<number>();
 const pendingPayments = new Map<number, { amount: number; total: number; invoiceId?: number }>();
 
-// Состояние для подарков
 interface GiftState {
     recipientId?: number;
     amount?: number;
@@ -24,7 +23,6 @@ interface GiftState {
 }
 const giftStates = new Map<number, GiftState>();
 
-// Функция для получения уведомления о подарке на языке получателя
 function getGiftNotification(lang: Language, coins: number, message?: string): string {
     const notifications: Record<Language, { withMsg: string; noMsg: string }> = {
         RU: {
@@ -52,16 +50,15 @@ function getGiftNotification(lang: Language, coins: number, message?: string): s
             withMsg: `🎉 VOCÊ GANHOU UM PRESENTE!\n\nVocê recebeu ${coins} look coins de presente!\n\n💬 Mensagem do remetente:\n${message}`
         }
     };
-    
+
     const texts = notifications[lang] || notifications.EN;
     return message && message !== "-" ? texts!.withMsg : texts!.noMsg;
 }
 
-// Функция для красивого сообщения о пакете
 async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: number; total: number; price: number }): Promise<string> {
     const user = await findUser(ctx.from!.id);
     const locale = user?.language?.toLowerCase() || "en";
-    
+
     const messages: Record<string, string> = {
         ru: `✨ ВАШ ПАКЕТ ✨
 
@@ -72,7 +69,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 💳 Цена: $${pkg.price}
 
 ✅ Выберите способ оплаты:`,
-        
+
         en: `✨ YOUR PACKAGE ✨
 
 📦 Base amount: ${pkg.amount} look coins
@@ -82,7 +79,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 💳 Price: $${pkg.price}
 
 ✅ Choose your payment method:`,
-        
+
         es: `✨ TU PAQUETE ✨
 
 📦 Cantidad base: ${pkg.amount} look coins
@@ -92,7 +89,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 💳 Precio: $${pkg.price}
 
 ✅ Elige tu método de pago:`,
-        
+
         fr: `✨ VOTRE FORFAIT ✨
 
 📦 Quantité de base: ${pkg.amount} look coins
@@ -102,7 +99,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 💳 Prix: $${pkg.price}
 
 ✅ Choisissez votre mode de paiement:`,
-        
+
         pt: `✨ SEU PACOTE ✨
 
 📦 Quantidade base: ${pkg.amount} look coins
@@ -112,7 +109,7 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 💳 Preço: $${pkg.price}
 
 ✅ Escolha seu método de pagamento:`,
-        
+
         ua: `✨ ВАШ ПАКЕТ ✨
 
 📦 Базова кількість: ${pkg.amount} лук койнів
@@ -123,12 +120,12 @@ async function getPackageMessage(ctx: MyContext, pkg: { amount: number; bonus: n
 
 ✅ Оберіть спосіб оплати:`
     };
-    
+
     return messages[locale] || messages["en"]!;
 }
 
 export const walletHandler = (bot: Bot<MyContext>) => {
-    // Команда /wallet
+
     bot.command("wallet", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         if (!user) {
@@ -156,7 +153,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Купить себе
     bot.callbackQuery("buy_for_self", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         await ctx.reply(ctx.t("wallet-info", { coins: user?.coins ?? 0 }), {
@@ -165,14 +161,12 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Подарить другу - начало
     bot.callbackQuery("buy_for_friend", async (ctx) => {
         giftStates.set(ctx.from!.id, { awaitingId: true });
         await ctx.reply(ctx.t("gift-enter-id"));
         await ctx.answerCallbackQuery();
     });
 
-    // Выбор пакета
     bot.callbackQuery(/^topup_(500|1000|3000)$/, async (ctx) => {
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
@@ -183,106 +177,101 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Свое количество
     bot.callbackQuery("topup_custom", async (ctx) => {
         awaitingCustomAmount.add(ctx.from!.id);
         await ctx.reply(ctx.t("topup-enter-amount"));
         await ctx.answerCallbackQuery();
     });
 
-    // Обработка текстового ввода суммы и подарков
     bot.on("message:text", async (ctx, next) => {
         const userId = ctx.from!.id;
         const giftState = giftStates.get(userId);
-        
-        // Обработка ввода ID друга (или пересланного сообщения)
+
         if (giftState?.awaitingId) {
             let recipientId: number | undefined;
-            
+
             const forwardOrigin = ctx.message?.forward_origin;
             if (forwardOrigin?.type === "user") {
                 recipientId = forwardOrigin.sender_user.id;
             }
-            
+
             // @ts-ignore
             const forwardFrom = ctx.message?.forward_from;
             if (!recipientId && forwardFrom?.id) {
                 recipientId = forwardFrom.id;
             }
-            
+
             if (!recipientId) {
                 const parsed = parseInt(ctx.message.text);
                 if (!isNaN(parsed)) {
                     recipientId = parsed;
                 }
             }
-            
+
             if (!recipientId) {
                 await ctx.reply(ctx.t("gift-invalid-id"));
                 return;
             }
-            
+
             const recipient = await findUser(recipientId);
             if (!recipient) {
                 await ctx.reply(ctx.t("gift-user-not-found") + `\n\n(ID: ${recipientId})`);
                 return;
             }
-            
+
             giftStates.set(userId, { recipientId, awaitingId: false });
             await ctx.reply(ctx.t("gift-select-package", { recipientId }), {
                 reply_markup: getGiftPackageKeyboard(ctx)
             });
             return;
         }
-        
-        // Обработка сообщения для подарка
+
         if (giftState?.awaitingMessage && giftState.recipientId && giftState.total && giftState.amount) {
             const message = ctx.message.text;
             const recipient = await findUser(giftState.recipientId);
-            
+
             if (!recipient) {
                 await ctx.reply(ctx.t("gift-user-not-found"));
                 giftStates.delete(userId);
                 return;
             }
-            
+
             const newMessage = message !== "-" ? message : undefined;
-            giftStates.set(userId, { 
-                ...giftState, 
+            giftStates.set(userId, {
+                ...giftState,
                 message: newMessage,
-                awaitingMessage: false 
+                awaitingMessage: false
             });
-            
+
             if (userId === ADMIN_ID) {
                 await addCoinsToUser(giftState.recipientId, giftState.total);
-                
-                
+
                 const notification = getGiftNotification(
                     recipient.language as Language,
                     giftState.total,
                     message !== "-" ? message : undefined
                 );
-                
+
                 try {
                     await ctx.api.sendMessage(giftState.recipientId, notification);
                 } catch (e) {
                 }
-                
-                await ctx.reply(ctx.t("gift-sent-success", { 
-                    coins: giftState.total, 
-                    recipientId: giftState.recipientId 
+
+                await ctx.reply(ctx.t("gift-sent-success", {
+                    coins: giftState.total,
+                    recipientId: giftState.recipientId
                 }));
-                
+
                 giftStates.delete(userId);
                 return;
             }
-            
+
             const pkg = getPackageInfo(giftState.amount);
             await ctx.reply(
-                ctx.t("gift-payment-info", { 
-                    total: pkg.total, 
-                    price: pkg.price, 
-                    recipientId: giftState.recipientId 
+                ctx.t("gift-payment-info", {
+                    total: pkg.total,
+                    price: pkg.price,
+                    recipientId: giftState.recipientId
                 }),
                 {
                     reply_markup: getGiftPaymentKeyboard(ctx, giftState.amount)
@@ -290,13 +279,13 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             );
             return;
         }
-        
+
         if (!awaitingCustomAmount.has(userId)) {
             return next();
         }
 
         const amount = parseInt(ctx.message.text);
-        
+
         if (isNaN(amount) || amount < 100 || amount > 100000) {
             await ctx.reply(ctx.t("topup-invalid-amount"));
             return;
@@ -310,47 +299,44 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         });
     });
 
-    // ===== ПОДАРКИ: Выбор пакета =====
     bot.callbackQuery(/^gift_(500|1000|3000)$/, async (ctx) => {
         const userId = ctx.from!.id;
         const giftState = giftStates.get(userId);
-        
+
         if (!giftState?.recipientId) {
             await ctx.answerCallbackQuery({ text: "Error: recipient not found" });
             return;
         }
-        
+
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
-        
-        giftStates.set(userId, { 
-            ...giftState, 
-            amount, 
-            total: pkg.total, 
-            awaitingMessage: true 
+
+        giftStates.set(userId, {
+            ...giftState,
+            amount,
+            total: pkg.total,
+            awaitingMessage: true
         });
-        
+
         await ctx.reply(ctx.t("gift-enter-message"));
         await ctx.answerCallbackQuery();
     });
 
-    // Отмена подарка
     bot.callbackQuery("cancel_gift", async (ctx) => {
         giftStates.delete(ctx.from!.id);
         await ctx.reply(ctx.t("cancel-gift"));
         await ctx.answerCallbackQuery();
     });
 
-    // ===== ОПЛАТА ПОДАРКА ЧЕРЕЗ CRYPTOBOT =====
     bot.callbackQuery(/^gift_pay_crypto_(\d+)$/, async (ctx) => {
         const userId = ctx.from!.id;
         const giftState = giftStates.get(userId);
-        
+
         if (!giftState?.recipientId || !giftState.total) {
             await ctx.answerCallbackQuery({ text: "Error: gift data not found" });
             return;
         }
-        
+
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
 
@@ -360,10 +346,10 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             amount: pkg.price,
             asset: "USDT",
             description: `🎁 Подарок ${pkg.total} монет для друга`,
-            payload: JSON.stringify({ 
-                userId, 
-                amount, 
-                total: pkg.total, 
+            payload: JSON.stringify({
+                userId,
+                amount,
+                total: pkg.total,
                 isGift: true,
                 recipientId: giftState.recipientId,
                 giftMessage: giftState.message
@@ -374,10 +360,10 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             pendingPayments.set(userId, { amount, total: pkg.total, invoiceId: invoice.invoice_id });
 
             await ctx.reply(
-                ctx.t("gift-pay-crypto-info", { 
-                    total: pkg.total, 
-                    price: pkg.price, 
-                    recipientId: giftState.recipientId 
+                ctx.t("gift-pay-crypto-info", {
+                    total: pkg.total,
+                    price: pkg.price,
+                    recipientId: giftState.recipientId
                 }),
                 {
                     reply_markup: new InlineKeyboard()
@@ -393,7 +379,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Проверка оплаты подарка CryptoBot
     bot.callbackQuery(/^check_gift_crypto_(\d+)$/, async (ctx) => {
         const invoiceId = parseInt(ctx.match[1]!);
         const userId = ctx.from!.id;
@@ -409,7 +394,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
         if (status === "paid") {
             await addCoinsToUser(giftState.recipientId, pending.total);
-            
+
             const recipient = await findUser(giftState.recipientId);
             if (recipient) {
                 const notification = getGiftNotification(
@@ -422,13 +407,13 @@ export const walletHandler = (bot: Bot<MyContext>) => {
                 } catch (e) {
                 }
             }
-            
+
             pendingPayments.delete(userId);
             giftStates.delete(userId);
 
-            await ctx.reply(ctx.t("gift-sent-success", { 
-                coins: pending.total, 
-                recipientId: giftState.recipientId 
+            await ctx.reply(ctx.t("gift-sent-success", {
+                coins: pending.total,
+                recipientId: giftState.recipientId
             }));
             await ctx.answerCallbackQuery({ text: ctx.t("payment-success") });
         } else if (status === "expired") {
@@ -441,49 +426,46 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // ===== ОПЛАТА ПОДАРКА ЧЕРЕЗ TELEGRAM STARS =====
     bot.callbackQuery(/^gift_pay_stars_(\d+)$/, async (ctx) => {
         const userId = ctx.from!.id;
         const giftState = giftStates.get(userId);
-        
+
         if (!giftState?.recipientId || !giftState.total) {
             await ctx.answerCallbackQuery({ text: "Error: gift data not found" });
             return;
         }
-        
+
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
-        const starsPrice = Math.ceil(pkg.price * 50); // 1$ ≈ 50 звёзд
+        const starsPrice = Math.ceil(pkg.price * 50);
 
         await ctx.reply(
-            ctx.t("gift-pay-stars-info", { 
-                total: pkg.total, 
-                stars: starsPrice, 
-                recipientId: giftState.recipientId 
+            ctx.t("gift-pay-stars-info", {
+                total: pkg.total,
+                stars: starsPrice,
+                recipientId: giftState.recipientId
             })
         );
 
         await ctx.answerCallbackQuery();
 
-        // Создаём инвойс для Telegram Stars
         await ctx.api.raw.sendInvoice({
             chat_id: ctx.chat!.id,
             title: `🎁 Подарок ${pkg.total} монет`,
             description: `Подарок ${pkg.total} монет для друга`,
-            payload: JSON.stringify({ 
-                userId, 
-                amount, 
+            payload: JSON.stringify({
+                userId,
+                amount,
                 total: pkg.total,
                 isGift: true,
                 recipientId: giftState.recipientId,
                 giftMessage: giftState.message
             }),
-            currency: "XTR", // Telegram Stars
+            currency: "XTR",
             prices: [{ label: `🎁 ${pkg.total} монет`, amount: starsPrice }]
         });
     });
 
-    // ===== ОПЛАТА ЧЕРЕЗ CRYPTOBOT =====
     bot.callbackQuery(/^pay_crypto_(\d+)$/, async (ctx) => {
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
@@ -517,7 +499,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // Проверка оплаты CryptoBot
     bot.callbackQuery(/^check_crypto_(\d+)$/, async (ctx) => {
         const invoiceId = parseInt(ctx.match[1]!);
         const userId = ctx.from!.id;
@@ -534,20 +515,18 @@ export const walletHandler = (bot: Bot<MyContext>) => {
             const user = await addCoinsToUser(userId, pending.total);
             pendingPayments.delete(userId);
 
-            // Логируем покупку
             logPurchase(
                 userId,
                 pending.total,
-                (pending.amount / 100),  // Цена в USD
+                (pending.amount / 100),
                 "CryptoBot"
             );
 
-            // Уведомляем админа о покупке
             await notifyAdminAboutPurchase(
                 ctx.api as any,
                 userId,
                 pending.total,
-                (pending.amount / 100),  // Цена в USD
+                (pending.amount / 100),
                 "CryptoBot"
             );
 
@@ -566,31 +545,27 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         }
     });
 
-    // ===== ОПЛАТА ЧЕРЕЗ TELEGRAM STARS =====
     bot.callbackQuery(/^pay_stars_(\d+)$/, async (ctx) => {
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
-        const starsPrice = Math.ceil(pkg.price * 50); // 1$ ≈ 50 звёзд
+        const starsPrice = Math.ceil(pkg.price * 50);
 
-        // Отправляем инструкцию
         await ctx.reply(
             ctx.t("pay-stars-info", { total: pkg.total, stars: starsPrice, bonus: pkg.bonus })
         );
 
         await ctx.answerCallbackQuery();
 
-        // Создаём инвойс для Telegram Stars
         await ctx.api.raw.sendInvoice({
             chat_id: ctx.chat!.id,
             title: `${pkg.total} монет`,
             description: `Пополнение баланса на ${pkg.total} монет`,
             payload: JSON.stringify({ userId: ctx.from!.id, amount, total: pkg.total }),
-            currency: "XTR", // Telegram Stars
+            currency: "XTR",
             prices: [{ label: `${pkg.total} монет`, amount: starsPrice }]
         });
     });
 
-    // Обработка успешной оплаты Stars
     bot.on("pre_checkout_query", async (ctx) => {
         await ctx.answerPreCheckoutQuery(true);
     });
@@ -598,10 +573,10 @@ export const walletHandler = (bot: Bot<MyContext>) => {
     bot.on("message:successful_payment", async (ctx) => {
         const payment = ctx.message.successful_payment;
         const payload = JSON.parse(payment.invoice_payload);
-        
+
         if (payload.isGift && payload.recipientId) {
             await addCoinsToUser(payload.recipientId, payload.total);
-            
+
             const recipient = await findUser(payload.recipientId);
             if (recipient) {
                 const notification = getGiftNotification(
@@ -614,25 +589,24 @@ export const walletHandler = (bot: Bot<MyContext>) => {
                 } catch (e) {
                 }
             }
-            
+
             giftStates.delete(payload.userId);
-            
-            await ctx.reply(ctx.t("gift-sent-success", { 
-                coins: payload.total, 
-                recipientId: payload.recipientId 
+
+            await ctx.reply(ctx.t("gift-sent-success", {
+                coins: payload.total,
+                recipientId: payload.recipientId
             }));
         } else {
             const user = await addCoinsToUser(payload.userId, payload.total);
             if (user) {
-                // Логируем покупку
+
                 logPurchase(
                     payload.userId,
                     payload.total,
-                    payload.amount / 100,  // Цена в USD
+                    payload.amount / 100,
                     "Telegram Stars"
                 );
 
-                // Уведомляем админа о покупке
                 await notifyAdminAboutPurchase(
                     ctx.api as any,
                     payload.userId,
@@ -640,7 +614,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
                     payload.price,
                     "Telegram Stars"
                 );
-                
+
                 await ctx.reply(
                     ctx.t("topup-success", { total: payload.total, balance: user.coins })
                 );
@@ -656,7 +630,7 @@ export const walletHandler = (bot: Bot<MyContext>) => {
 
         const amount = parseInt(ctx.match[1]!);
         const pkg = getPackageInfo(amount);
-        
+
         await ctx.reply(
             ctx.t("admin-topup-confirm", { amount: pkg.amount, total: pkg.total }),
             {
@@ -684,7 +658,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery({ text: "✅ Монеты начислены!" });
     });
 
-    // Отмена
     bot.callbackQuery("cancel_topup", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         pendingPayments.delete(ctx.from!.id);
@@ -695,7 +668,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Назад к выбору пакета
     bot.callbackQuery("back_to_packages", async (ctx) => {
         const user = await findUser(ctx.from!.id);
         await ctx.replyWithPhoto(new InputFile(WALLET_IMAGE), {
@@ -705,7 +677,6 @@ export const walletHandler = (bot: Bot<MyContext>) => {
         await ctx.answerCallbackQuery();
     });
 
-    // Назад в меню
     bot.callbackQuery("back_menu", async (ctx) => {
         await ctx.replyWithPhoto(new InputFile(MAIN_IMAGE), {
             caption: await getWelcomeBackMessage(ctx),
