@@ -34,5 +34,6 @@ RUN apt-get update \
 COPY --from=deps /app/package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/dist ./dist
+COPY --from=deps /app/prisma ./prisma
 
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
